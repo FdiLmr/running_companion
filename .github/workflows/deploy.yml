@@ -1,0 +1,41 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # Step 1: Check out the code
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.12
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          . venv/bin/activate
+          pip install -r requirements.txt
+
+      # Step 4: Lint with Flake8
+      - name: Lint with Flake8
+        run: |
+          venv\Scripts\activate
+          pip install flake8
+          flake8 .
+
+      # Step 5: Run tests
+      - name: Run Tests
+        run: |
+          . venv/bin/activate
+          pytest
