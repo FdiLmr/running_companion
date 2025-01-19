@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m venv venv
-          . venv/bin/activate
+          venv\Scripts\activate
           pip install -r requirements.txt
 
       # Step 4: Lint with Flake8
@@ -37,5 +37,5 @@ jobs:
       # Step 5: Run tests
       - name: Run Tests
         run: |
-          . venv/bin/activate
+          venv\Scripts\activate
           pytest
