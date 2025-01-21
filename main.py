@@ -3,9 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from models.user import UserRegister, UserLogin
-from routes.user import user_router
 from utils.jwt import get_cognito_public_keys
-from pydantic import BaseModel
 import os
 import boto3
 import hmac
@@ -22,7 +20,9 @@ app = FastAPI()
 # Add CORS Middleware to allow cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (replace with specific domains in production)
+    allow_origins=[
+        "*"
+    ],  # Allow all origins (replace with specific domains in production)
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all HTTP headers
@@ -39,7 +39,9 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 def calculate_secret_hash(username):
     message = username + APP_CLIENT_ID
     key = bytes(APP_CLIENT_SECRET, "utf-8")
-    secret_hash = base64.b64encode(hmac.new(key, message.encode("utf-8"), hashlib.sha256).digest()).decode("utf-8")
+    secret_hash = base64.b64encode(
+        hmac.new(key, message.encode("utf-8"), hashlib.sha256).digest()
+    ).decode("utf-8")
     return secret_hash
 
 
@@ -83,7 +85,7 @@ def login(user: UserLogin):
         id_token = response["AuthenticationResult"]["IdToken"]
         return {
             "access_token": response["AuthenticationResult"]["AccessToken"],
-            "id_token": id_token
+            "id_token": id_token,
         }
     except client.exceptions.NotAuthorizedException:
         raise HTTPException(status_code=400, detail="Invalid credentials")
@@ -93,8 +95,8 @@ def login(user: UserLogin):
         raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
 
 
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 
 @app.get("/user")
 def get_user(token: str = Depends(oauth2_scheme)):
@@ -109,7 +111,7 @@ def get_user(token: str = Depends(oauth2_scheme)):
 
         # Construct RSA key from the JWK
         rsa_key = jwk.construct(jwk_data, algorithm=JWT_ALGORITHM)
-        
+
         # Decode and verify the *ID Token* if that's what you're passing to this endpoint
         decoded_token = jwt.decode(
             token,
@@ -118,11 +120,11 @@ def get_user(token: str = Depends(oauth2_scheme)):
             audience=APP_CLIENT_ID,
             issuer=f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USER_POOL_ID}",
         )
-        
+
         # ID Token usually has 'email' and possibly 'cognito:username'
         return {
             "username": decoded_token.get("cognito:username"),
-            "email": decoded_token.get("email")
+            "email": decoded_token.get("email"),
         }
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
