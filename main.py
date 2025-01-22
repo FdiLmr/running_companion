@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from models.user import UserRegister, UserLogin
+from routes.strava import router as strava_router
 from utils.jwt import get_cognito_public_keys
 import os
 import boto3
@@ -27,6 +28,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all HTTP headers
 )
+
+# Register the Strava router
+app.include_router(strava_router)
 
 # Environment variables
 COGNITO_REGION = os.getenv("COGNITO_REGION")
