@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 import requests
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,10 +33,6 @@ def connect_to_strava():
 
 @router.get("/strava/callback")
 def strava_callback(code: str = Query(...)):
-    """
-    Handle the Strava OAuth callback by exchanging the 'code' for an access token
-    and refresh token.
-    """
     token_url = "https://www.strava.com/oauth/token"
     response = requests.post(
         token_url,
@@ -48,18 +45,50 @@ def strava_callback(code: str = Query(...)):
     )
 
     if response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Failed to exchange code for tokens")
+        # Print or log the exact error message returned by Strava
+        print("Strava error status:", response.status_code)
+        print("Strava error body:", response.text)
 
+        # Then raise a more descriptive error
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to exchange code for tokens: {response.status_code} - {response.text}",
+        )
+
+    # ✅ Capture the response JSON in the 'tokens' variable
     tokens = response.json()
+    
     athlete_id = tokens["athlete"]["id"]
 
-    # Store tokens in a local dict (for demonstration).
-    # In production, you'd store these in a real DB or pass them to your Lambda function as needed.
-    user_tokens[athlete_id] = {
-        "access_token": tokens["access_token"],
-        "refresh_token": tokens["refresh_token"],
-        "expires_at": tokens["expires_at"],
-        "scope": tokens.get("scope", ""),
-    }
+    # Store locally in a JSON file
+    store_tokens_in_file(athlete_id, tokens)
 
     return {"message": "Strava account connected successfully", "tokens": tokens}
+
+
+def store_tokens_in_file(athlete_id, tokens):
+    """
+    Append or update local JSON file with the new tokens for this athlete/user.
+    """
+    FILENAME = "strava_tokens.json"
+    try:
+        # Load existing data if file already exists
+        if os.path.exists(FILENAME):
+            with open(FILENAME, "r") as f:
+                data = json.load(f)
+        else:
+            data = {}
+
+        # Overwrite or create the entry for this athlete_id
+        data[str(athlete_id)] = {
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+            "expires_at": tokens["expires_at"]
+        }
+
+        # Save back to disk
+        with open(FILENAME, "w") as f:
+            json.dump(data, f, indent=2)
+
+    except Exception as e:
+        print("Error writing tokens to file:", e)
