@@ -1,0 +1,17 @@
+version: 1.0
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd frontend    # Navigate to the frontend directory
+        - npm install    # Install dependencies
+    build:
+      commands:
+        - npm run build  # Build the React app
+  artifacts:
+    baseDirectory: frontend/build  # <-- Critical: Path to build artifacts
+    files:
+      - '**/*'                     # Include all files in the build directory
+  cache:
+    paths:
+      - frontend/node_modules/**/*  # Cache dependencies
