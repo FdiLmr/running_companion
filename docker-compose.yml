@@ -1,0 +1,17 @@
+version: '3.12'
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/Running_companion
+    command: uvicorn Running_companion.main:app --host 0.0.0.0 --port 8000
+  frontend:
+    image: node:16
+    working_dir: /app
+    volumes:
+      - ./frontend:/Running_companion
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm start"
