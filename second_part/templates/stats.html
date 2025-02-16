@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Stats - Strava Analysis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Statistics for Athlete {{ stats.athlete_id }}</h2>
+    <a href="/view_activities/{{ stats.athlete_id }}" class="btn btn-primary">
+        <i class="bi bi-activity"></i> View Activities
+    </a>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4>Recent Run Totals</h4>
+            </div>
+            <div class="card-body">
+                {% for key, value in stats.recent_run_totals.items() %}
+                    <p><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4>All Run Totals</h4>
+            </div>
+            <div class="card-body">
+                {% for key, value in stats.all_run_totals.items() %}
+                    <p><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4>All Ride Totals</h4>
+            </div>
+            <div class="card-body">
+                {% for key, value in stats.all_ride_totals.items() %}
+                    <p><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/view_athletes" class="btn btn-secondary">Back to Athletes</a>
+</div>
+{% endblock %}

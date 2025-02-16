@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Strava Analysis - Home{% endblock %}
+
+{% block content %}
+<div class="card mt-4">
+    <div class="card-body">
+        <h4>Welcome to Strava Analysis</h4>
+        <p>This tool helps you analyze your running activities and training patterns using your Strava data.</p>
+
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            Note: You need at least 20 activities and 3 months of data for meaningful analysis.
+        </div>
+
+        {% if not session.get('token') %}
+        <div class="mt-4">
+            <a href="/login" class="btn btn-primary btn-lg">
+                <i class="bi bi-strava"></i> Connect with Strava
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Processing - Strava Analysis{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mb-5">
+        <h3><font color="red">Your activities are being analysed!</font></h3>
+        <hr>
+        <p>
+            Sorry! The system is under some heavy load right now, and is constrained by the limits of Strava's API. 
+            Please come back in a day, and we'll process your stuff in the meantime.
+        </p>
+        
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            You need more than 3 months' data, at least one race where you scored a Strava PB, 
+            and more than 20 runs to get an analysis - otherwise, there is insufficient data to 
+            make any conclusions about your training plan.
+        </div>
+
+        <div class="mt-4">
+            <button onclick="window.location.reload()" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise"></i> Check Status
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

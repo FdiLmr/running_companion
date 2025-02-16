@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Best Efforts for Athlete {{ athlete_id }}</title>
+  <!-- Example: Using Bootstrap 5 -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  >
+  <style>
+    /* Example custom styles for the cards */
+    .effort-card {
+      margin-bottom: 1rem;
+    }
+    .effort-time {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .effort-activity-name {
+      font-weight: 500;
+      color: #333;
+    }
+    .effort-date {
+      font-size: 0.9rem;
+      color: #777;
+    }
+    /* Button spacing for filters */
+    .filter-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<div class="container my-4">
+  <h1 class="mb-4">Best Efforts for Athlete {{ athlete_id }}</h1>
+
+  <!-- Distance Filter Bar -->
+  <div class="filter-buttons">
+    <button class="btn btn-outline-primary" onclick="filterDistance('all')">All Runs</button>
+    <button class="btn btn-outline-primary" onclick="filterDistance('5km')">5km</button>
+    <button class="btn btn-outline-primary" onclick="filterDistance('10km')">10km</button>
+    <button class="btn btn-outline-primary" onclick="filterDistance('15km')">15km</button>
+    <button class="btn btn-outline-primary" onclick="filterDistance('Half-Marathon')">Half-Marathon</button>
+    <button class="btn btn-outline-primary" onclick="filterDistance('Marathon')">Marathon</button>
+    <button class="btn btn-outline-primary" onclick="filterDistance('50km')">50km</button>
+    <!-- Add more as needed -->
+  </div>
+
+  <!-- Time Filter Bar -->
+  <div class="filter-buttons">
+    <button class="btn btn-outline-secondary" onclick="filterYear('all')">All Time</button>
+    <button class="btn btn-outline-secondary" onclick="filterYear('2025')">2025</button>
+    <button class="btn btn-outline-secondary" onclick="filterYear('2024')">2024</button>
+    <button class="btn btn-outline-secondary" onclick="filterYear('2023')">2023</button>
+    <!-- etc. Add real logic or a loop of available years -->
+  </div>
+
+  <!-- Container for best efforts -->
+  <div id="efforts-container" class="row">
+    {% for item in all_efforts %}
+      <div
+        class="col-12 col-md-6 effort-card"
+        data-distance="{{ item.distance_label }}"
+        data-year="{{ item.year }}"
+      >
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title effort-time">
+              {{ item.elapsed_time|format_time }}
+            </h5>
+            <p class="effort-activity-name">
+              {{ item.activity.name }}
+            </p>
+            <p class="effort-date">
+              {{ item.activity.start_date.strftime('%Y-%m-%d') if item.activity.start_date else '' }}
+            </p>
+            <p class="card-text">
+              Distance: <strong>{{ item.distance_label }}</strong>
+              <br>
+              Activity ID: {{ item.activity.id }}
+            </p>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Link back or other navigation -->
+  <div class="mt-3">
+    <a href="{{ url_for('render_index') }}" class="btn btn-secondary">Back to Home</a>
+  </div>
+</div>
+
+<!-- JavaScript for client-side filtering -->
+<script>
+  let currentDistanceFilter = 'all';
+  let currentYearFilter = 'all';
+
+  function filterDistance(distance) {
+    currentDistanceFilter = distance;
+    applyFilters();
+  }
+
+  function filterYear(year) {
+    currentYearFilter = year;
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const items = document.querySelectorAll('.effort-card');
+    items.forEach(item => {
+      const itemDistance = item.dataset.distance;  // e.g. "5km"
+      const itemYear = item.dataset.year;          // e.g. "2025"
+
+      // Check if this item matches the current distance filter
+      const distanceMatch = (currentDistanceFilter === 'all' || itemDistance === currentDistanceFilter);
+
+      // Check if this item matches the current year filter
+      const yearMatch = (currentYearFilter === 'all' || itemYear === currentYearFilter);
+
+      // Show/hide based on both filters
+      if (distanceMatch && yearMatch) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+</script>
+
+<!-- Optionally, Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

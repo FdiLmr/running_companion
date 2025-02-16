@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Model Results for Athlete {{ athlete_id }}</h2>
+    
+    {% if error_message %}
+    <div class="alert alert-danger">
+        {{ error_message }}
+    </div>
+    {% endif %}
+    
+    {% if model_outputs %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Model Performance</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Absolute VDOT Model</h5>
+                    <p>R² Score: {{ model_outputs.absolute_vdot_score|round(3) }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>VDOT Change Model</h5>
+                    <p>R² Score: {{ model_outputs.vdot_change_score|round(3) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Absolute VDOT SHAP Plots</h4>
+                </div>
+                <div class="card-body">
+                    <img src="{{ url_for('static', filename='shap_plots/absolute_vdot_summary_' + athlete_id + '.png') }}" 
+                         class="img-fluid mb-3" alt="Absolute VDOT SHAP Summary Plot">
+                    <img src="{{ url_for('static', filename='shap_plots/absolute_vdot_bar_' + athlete_id + '.png') }}" 
+                         class="img-fluid" alt="Absolute VDOT SHAP Bar Plot">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>VDOT Change SHAP Plots</h4>
+                </div>
+                <div class="card-body">
+                    <img src="{{ url_for('static', filename='shap_plots/vdot_change_summary_' + athlete_id + '.png') }}" 
+                         class="img-fluid mb-3" alt="VDOT Change SHAP Summary Plot">
+                    <img src="{{ url_for('static', filename='shap_plots/vdot_change_bar_' + athlete_id + '.png') }}" 
+                         class="img-fluid" alt="VDOT Change SHAP Bar Plot">
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="text-center mt-3">
+        <a href="{{ url_for('train_model_route', athlete_id=athlete_id) }}" class="btn btn-primary">Retrain Model</a>
+        <a href="{{ url_for('visualize', athlete_id=athlete_id) }}" class="btn btn-secondary">Back to Visualizations</a>
+    </div>
+</div>
+{% endblock %} 

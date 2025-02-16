@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Training Analysis - Strava Analysis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Training Analysis</h1>
+    
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">Performance Analysis</h2>
+                    <p class="card-text text-muted">
+                        This visualization shows how your training compares to other athletes, highlighting areas where you excel and areas for potential improvement.
+                    </p>
+                    <div class="text-center">
+                        <a href="{{ url_for('visualize_performance', athlete_id=athlete_id) }}?v={{ random_num }}" 
+                           class="btn btn-primary" 
+                           target="_blank">
+                            <i class="bi bi-bar-chart"></i> View Performance Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">Improvement Potential</h2>
+                    <p class="card-text text-muted">
+                        This visualization shows how your training adaptations compare to other athletes, indicating which aspects of your training could lead to the most improvement.
+                    </p>
+                    <div class="text-center">
+                        <a href="{{ url_for('visualize_improvement', athlete_id=athlete_id) }}?v={{ random_num }}" 
+                           class="btn btn-primary" 
+                           target="_blank">
+                            <i class="bi bi-bar-chart"></i> View Improvement Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="/view_athletes" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Athletes
+        </a>
+        <a href="{{ url_for('visualize_performance', athlete_id=athlete_id) }}" class="btn btn-primary">View Performance</a>
+        <a href="{{ url_for('visualize_improvement', athlete_id=athlete_id) }}" class="btn btn-success">View Improvement</a>
+        <a href="{{ url_for('model_results', athlete_id=athlete_id) }}" class="btn btn-info">View Model Analysis</a>
+    </div>
+</div>
+{% endblock %}
