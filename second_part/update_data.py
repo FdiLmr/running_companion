@@ -13,7 +13,7 @@ import json
 logger = logging.getLogger(__name__)
 
 DEBUG_MODE = True  # Set to False in production
-ACTIVITIES_LIMIT = 40 if DEBUG_MODE else 90
+ACTIVITIES_LIMIT = 5 if DEBUG_MODE else 90
 
 def refresh_tokens():    
     try:
@@ -339,9 +339,8 @@ def fetch_strava_data():
                     processing_status.at[index, 'status'] = 'none'
                     return ('failure processing athlete ' + str(row['athlete_id']) + ': ' + str(ex))          
                                                 
-                # Only update status to processed if no more activities to fetch
-                if not has_more_activities:
-                    processing_status.at[index, 'status'] = 'processed'
+                # Always set status to 'none' so the athlete can be re-fetched
+                processing_status.at[index, 'status'] = 'none'
                 write_db_replace(processing_status, 'processing_status')
                 
                 daily_limit.at[0, 'daily'] = current_api_calls
