@@ -13,7 +13,7 @@ import json
 logger = logging.getLogger(__name__)
 
 DEBUG_MODE = True  # Set to False in production
-ACTIVITIES_LIMIT = 40 if DEBUG_MODE else 90
+ACTIVITIES_LIMIT = 44 if DEBUG_MODE else 90
 
 def refresh_tokens():    
     try:
@@ -424,7 +424,7 @@ def process_stored_data():
                 transform_athlete_data(athlete_id, populate_all_from_files=1)
                 athletes_processed += 1
                 # Only mark as processed if transform was successful
-                processing_status.at[index, 'status'] = 'processed'
+                processing_status.at[index, 'status'] = 'none'
                 write_db_replace(processing_status, 'processing_status')
             except Exception as e:
                 logger.error(f"Error processing athlete {athlete_id}: {e}")
