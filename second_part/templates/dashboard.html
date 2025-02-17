@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Athlete {{ athlete_id }}</title>
+  <!-- Load Plotly -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <h1>Dashboard for Athlete {{ athlete_id }}</h1>
+  
+  <!-- Date Range Filter -->
+  <div>
+    <label for="start-date">Start Date:</label>
+    <input type="date" id="start-date">
+    <label for="end-date">End Date:</label>
+    <input type="date" id="end-date">
+    <button onclick="updateChart()">Filter</button>
+  </div>
+  
+  <!-- Time Series Chart Container -->
+  <div id="time-series-chart" style="width:100%;height:500px;"></div>
+  <!-- Drill-down Chart Container -->
+  <div id="detail-chart" style="width:100%;height:400px;"></div>
+  
+  <script>
+    var athleteId = "{{ athlete_id }}";
+    var activitiesData = [];
+
+    // Fetch dashboard data from our API endpoint
+    function fetchDashboardData() {
+      fetch('/api/dashboard-data/' + athleteId)
+        .then(response => response.json())
+        .then(data => {
+          activitiesData = data;
+          plotTimeSeries(data);
+        })
+        .catch(error => console.error('Error fetching dashboard data:', error));
+    }
+
+    // Plot time series chart of run distances
+    function plotTimeSeries(data) {
+      // Apply date filtering if set
+      var startDate = document.getElementById('start-date').value;
+      var endDate = document.getElementById('end-date').value;
+      
+      var filteredData = data.filter(item => {
+         var d = new Date(item.date);
+         if(startDate && new Date(startDate) > d) return false;
+         if(endDate && new Date(endDate) < d) return false;
+         return true;
+      });
+
+      var dates = filteredData.map(item => item.date);
+      var distances = filteredData.map(item => item.distance);
+      var avgHR = filteredData.map(item => item.avg_hr);
+      var activityIds = filteredData.map(item => item.id);
+
+      var trace = {
+        x: dates,
+        y: distances,
+        mode: 'lines+markers',
+        marker: { size: 8 },
+        text: avgHR.map(hr => hr ? 'Avg HR: ' + hr : 'No HR data'),
+        customdata: activityIds,
+        hovertemplate: '%{x}<br>Distance: %{y} km<br>%{text}<extra></extra>'
+      };
+
+      var layout = {
+        title: 'Run Distances Over Time',
+        xaxis: { title: 'Date' },
+        yaxis: { title: 'Distance (km)' }
+      };
+
+      Plotly.newPlot('time-series-chart', [trace], layout);
+
+      // When a data point is clicked, fetch its detailed heart rate trend
+      var chartDiv = document.getElementById('time-series-chart');
+      chartDiv.on('plotly_click', function(data){
+        var pts = data.points[0];
+        var activityId = pts.customdata;
+        fetchActivityDetails(activityId);
+      });
+    }
+
+    // Replot chart when filters change
+    function updateChart() {
+      plotTimeSeries(activitiesData);
+    }
+
+    // Fetch detailed activity data (e.g., heart rate trend) and plot it
+    function fetchActivityDetails(activityId) {
+      fetch('/api/activity-details/' + activityId + '?athlete_id=' + athleteId)
+        .then(response => response.json())
+        .then(data => {
+          var hrTrends = data.hr_trends;
+          if (hrTrends.length > 0) {
+            var trace = {
+              x: [...Array(hrTrends.length).keys()],  // indices as a proxy for time
+              y: hrTrends,
+              mode: 'lines+markers',
+              marker: { size: 8 }
+            };
+            var layout = {
+              title: 'Heart Rate Trend for Activity ' + activityId,
+              xaxis: { title: 'Lap Index or Time Point' },
+              yaxis: { title: 'Heart Rate' }
+            };
+            Plotly.newPlot('detail-chart', [trace], layout);
+          } else {
+            document.getElementById('detail-chart').innerHTML = '<p>No heart rate trend data available for this activity.</p>';
+          }
+        })
+        .catch(error => console.error('Error fetching activity details:', error));
+    }
+
+    // Initial load
+    fetchDashboardData();
+  </script>
+</body>
+</html>

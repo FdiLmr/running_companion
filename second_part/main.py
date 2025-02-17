@@ -1,4 +1,4 @@
-from flask import Flask, session, request, render_template, redirect, send_file
+from flask import Flask, session, request, render_template, redirect, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from environs import Env
@@ -24,6 +24,7 @@ from models import (
 )
 from visualisations import athletevsbest, athletevsbestimprovement
 import random
+import json
 from train_model import train_model
 
 # Configure logging first
@@ -508,6 +509,59 @@ def view_best_efforts(athlete_id):
     except Exception as e:
         app.logger.error(f"Error retrieving best efforts: {e}")
         return f"Error retrieving best efforts: {e}"
+
+
+@app.route('/api/dashboard-data/<athlete_id>')
+def dashboard_data(athlete_id):
+    try:
+        # Example: Query the Activity model for runs (adjust field names as needed)
+        activities = db.session.query(Activity).filter_by(athlete_id=athlete_id, type='Run').all()
+        data = []
+        for a in activities:
+            data.append({
+                'id': a.id,
+                'date': a.start_date.strftime('%Y-%m-%d') if a.start_date else '',
+                'distance': round(a.distance/1000, 2) if a.distance else 0,  # in km
+                'avg_hr': a.average_heartrate  # may be None
+            })
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/api/activity-details/<activity_id>')
+def activity_details(activity_id):
+    try:
+        athlete_id = request.args.get('athlete_id')
+        if not athlete_id:
+            return jsonify({'error': 'Missing athlete_id parameter'}), 400
+
+        # Build the file path: data/{athlete_id}/{activity_id}.json
+        file_path = os.path.join('./data', str(athlete_id), f'{activity_id}.json')
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'Activity file not found'}), 404
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            activity_data = json.load(f)
+        
+        # For demonstration, assume the detailed activity JSON has a 'laps' list,
+        # and that each lap may have an 'average_heartrate' field.
+        hr_trends = []
+        if 'laps' in activity_data:
+            for lap in activity_data['laps']:
+                if 'average_heartrate' in lap:
+                    hr_trends.append(lap['average_heartrate'])
+        
+        return jsonify({'activity_id': activity_id, 'hr_trends': hr_trends})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/dashboard/<athlete_id>')
+def dashboard(athlete_id):
+    return render_template('dashboard.html', athlete_id=athlete_id)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
