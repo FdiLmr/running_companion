@@ -13,7 +13,7 @@ import json
 logger = logging.getLogger(__name__)
 
 DEBUG_MODE = True  # Set to False in production
-ACTIVITIES_LIMIT = 5 if DEBUG_MODE else 90
+ACTIVITIES_LIMIT = 40 if DEBUG_MODE else 90
 
 def refresh_tokens():    
     try:
@@ -214,11 +214,30 @@ def fetch_strava_data():
                             start = time.time()
                             
                             activity_id = activity['id']
-                            url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-                            response = requests.get(url, headers=headers)
-                            this_response = response.json()
+                            
+                            # Create a directory for this athlete if it doesn't exist
+                            athlete_dir = os.path.join('./data', str(athlete_id))
+                            if not os.path.exists(athlete_dir):
+                                os.makedirs(athlete_dir)
+                            
+                            # Build the file path using athlete_id and activity_id
+                            file_path = os.path.join(athlete_dir, f'{activity_id}.json')
+                            
+                            if os.path.exists(file_path):
+                                # If the file already exists, load the JSON data from disk
+                                with open(file_path, 'r', encoding='utf-8') as f:
+                                    this_response = json.load(f)
+                            else:
+                                # Otherwise, fetch the detailed activity data from Strava
+                                url = f'https://www.strava.com/api/v3/activities/{activity_id}'
+                                response = requests.get(url, headers=headers)
+                                this_response = response.json()
+                                # Save the JSON data to file
+                                with open(file_path, 'w', encoding='utf-8') as f:
+                                    json.dump(this_response, f, indent=2)
+                                current_api_calls += 1  # Only count an API call if we had to fetch it
+                            
                             activities.append(this_response)
-                            current_api_calls += 1
                             new_activities_count += 1
                             
                             # Mapping from best effort names (lowercase) to the Activity model column names.
