@@ -330,27 +330,34 @@ def fetch_strava_data():
                     athlete_data["_Stats"] = athlete_stats
                     athlete_data["_Activities"] = activities
                     
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    # After processing activities, save athlete metadata, zones, and stats to fixed files.
+                    data_dir = './data'
+                    if not os.path.exists(data_dir):
+                        os.makedirs(data_dir)
+    
+                    athlete_file = f'{data_dir}/athlete_{athlete_id}_athlete.json'
+                    zones_file   = f'{data_dir}/athlete_{athlete_id}_zones.json'
+                    stats_file   = f'{data_dir}/athlete_{athlete_id}_stats.json'
     
                     try:
-                        # Save raw API data first
-                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                        
-                        # After getting athlete data
-                        save_activity_data(athlete_id, [athlete_data], f"{timestamp}_athlete")
-                        save_activity_data(athlete_id, [athlete_zones], f"{timestamp}_zones")
-                        save_activity_data(athlete_id, [athlete_stats], f"{timestamp}_stats")
-                        
-                        # After getting detailed activities
-                        if len(activities) > 0:
-                            save_activity_data(athlete_id, activities, f"{timestamp}_detailed")
-                        
+                        with open(athlete_file, 'w', encoding='utf-8') as f:
+                            json.dump(athlete_data, f, indent=2)
+                        logger.info(f"Saved athlete metadata to {athlete_file}")
+    
+                        with open(zones_file, 'w', encoding='utf-8') as f:
+                            json.dump(athlete_zones, f, indent=2)
+                        logger.info(f"Saved zones data to {zones_file}")
+    
+                        with open(stats_file, 'w', encoding='utf-8') as f:
+                            json.dump(athlete_stats, f, indent=2)
+                        logger.info(f"Saved stats data to {stats_file}")
                     except Exception as e:
-                        logger.error(f"Error in data processing: {e}")
+                        logger.error(f"Error saving athlete files: {e}")
                         daily_limit.at[0, 'daily'] = current_api_calls
-                        write_db_replace(daily_limit,'daily_limit')                                
+                        write_db_replace(daily_limit, 'daily_limit')
                         processing_status.at[index, 'status'] = 'none'
                         return f'failure processing athlete {athlete_id}: {str(e)}'
+
                     
                 except Exception as ex:                    
                     daily_limit.at[0, 'daily'] = current_api_calls
@@ -413,27 +420,35 @@ def process_stored_data():
     start_time = time.time()
     total_activities_processed = 0
     athletes_processed = 0
-    
+
+    logger.debug("Reading processing_status table from database.")
     processing_status = read_db('processing_status')
     athletes_to_process = len(processing_status[processing_status['status'] == 'none'])
-    
+    logger.info(f"Found {athletes_to_process} athletes to process (status == 'none').")
+
     for index, row in processing_status.iterrows():
         athlete_id = int(row['athlete_id'])
+        logger.debug(f"Processing athlete with ID: {athlete_id}, current status: {row['status']}")
         if athlete_id != 0 and row['status'] in ["none", "processing"]:
             try:
+                logger.info(f"Starting transformation for athlete {athlete_id}.")
                 transform_athlete_data(athlete_id, populate_all_from_files=1)
                 athletes_processed += 1
+                logger.info(f"Transformation successful for athlete {athlete_id}.")
                 # Only mark as processed if transform was successful
                 processing_status.at[index, 'status'] = 'none'
                 write_db_replace(processing_status, 'processing_status')
+                logger.debug(f"Updated processing_status for athlete {athlete_id} to 'none'.")
             except Exception as e:
-                logger.error(f"Error processing athlete {athlete_id}: {e}")
+                logger.error(f"Error processing athlete {athlete_id}: {e}", exc_info=True)
                 continue
-    
+
+    total_time = time.time() - start_time
     summary = f"""
     Processing Complete:
     ===================
     Athletes processed: {athletes_processed}
-    Total processing time: {time.time() - start_time:.2f} seconds
+    Total processing time: {total_time:.2f} seconds
     """
+    logger.info("process_stored_data() completed. " + summary)
     return summary

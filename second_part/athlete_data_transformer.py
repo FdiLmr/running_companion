@@ -41,52 +41,69 @@ def load_file_data(athlete_id: int) -> dict:
         return None
 
 def load_latest_athlete_data(athlete_id: int) -> dict:
-    """Load the most recent data for an athlete from JSON files."""
+    """Load the most recent data for an athlete from individual activity files."""
     try:
-        filename = f'./data/athlete_{athlete_id}_activities.json'
-        if not os.path.exists(filename):
-            logger.error(f"No data file found for athlete {athlete_id}")
+        activity_dir = f'./data/{athlete_id}'
+        logger.debug(f"Looking for activity directory: {activity_dir}")
+        if not os.path.exists(activity_dir):
+            logger.error(f"No activity directory found for athlete {athlete_id}")
             return None
-            
-        with open(filename, 'r', encoding='utf-8') as f:
-            all_data = json.load(f)
-            
-        # Get latest data for each type
-        latest_data = {}
-        data_types = ['athlete', 'zones', 'stats']  # Removed 'detailed' from here
-        
-        # Get most recent timestamp for athlete data, zones, and stats
-        for data_type in data_types:
-            type_timestamps = [ts for ts in all_data.keys() if data_type in ts]
-            if type_timestamps:
-                latest_timestamp = max(type_timestamps)
-                latest_data[data_type] = all_data[latest_timestamp]
-        
-        # Collect all activities from all timestamps
+
         all_activities = []
-        for timestamp, data in all_data.items():
-            if 'detailed' in timestamp:
-                all_activities.extend(data)
+        file_list = os.listdir(activity_dir)
+        logger.debug(f"Found {len(file_list)} files in {activity_dir}.")
+        for filename in file_list:
+            # We assume that individual activity files are named with a numeric activity ID.
+            if filename.endswith(".json") and filename[:-5].isdigit():
+                file_path = os.path.join(activity_dir, filename)
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        activity_data = json.load(f)
+                        all_activities.append(activity_data)
+                except Exception as e:
+                    logger.error(f"Error loading file {file_path}: {e}", exc_info=True)
         
-        # Sort activities by date if needed
-        if all_activities:
+        logger.info(f"Loaded {len(all_activities)} activity files for athlete {athlete_id}.")
+
+        # Sort activities by start_date (assuming ISO format strings)
+        try:
             all_activities.sort(key=lambda x: x.get('start_date', ''), reverse=True)
-        
-        # Construct athlete_data dict in expected format
-        if all(k in latest_data for k in data_types):
-            return {
-                **latest_data['athlete'][0],  # Base athlete data
-                '_Zones': latest_data['zones'][0],
-                '_Stats': latest_data['stats'][0],
-                '_Activities': all_activities  # All activities across all timestamps
-            }
-        else:
-            logger.error(f"Missing required data types for athlete {athlete_id}")
-            return None
-            
+            logger.debug("Sorted activities by start_date (descending).")
+        except Exception as e:
+            logger.error(f"Error sorting activities for athlete {athlete_id}: {e}", exc_info=True)
+
+        # Define file paths for athlete metadata, zones, and stats.
+        athlete_file = f'./data/athlete_{athlete_id}_athlete.json'
+        zones_file   = f'./data/athlete_{athlete_id}_zones.json'
+        stats_file   = f'./data/athlete_{athlete_id}_stats.json'
+        logger.debug(f"Expecting athlete metadata file at: {athlete_file}")
+        logger.debug(f"Expecting zones file at: {zones_file}")
+        logger.debug(f"Expecting stats file at: {stats_file}")
+
+        with open(athlete_file, 'r', encoding='utf-8') as f:
+            athlete_data = json.load(f)
+        logger.debug("Athlete metadata loaded successfully.")
+
+        with open(zones_file, 'r', encoding='utf-8') as f:
+            zones_data = json.load(f)
+        logger.debug("Zones data loaded successfully.")
+
+        with open(stats_file, 'r', encoding='utf-8') as f:
+            stats_data = json.load(f)
+        logger.debug("Stats data loaded successfully.")
+
+        final_data = {
+            **athlete_data,       # Base athlete metadata.
+            '_Zones': zones_data, # HR zones data.
+            '_Stats': stats_data, # Stats data.
+            '_Activities': all_activities  # List of all activities.
+        }
+        logger.info(f"Successfully loaded latest data for athlete {athlete_id}. Total activities: {len(all_activities)}")
+        return final_data
     except Exception as e:
-        logger.error(f"Error loading data from files for athlete {athlete_id}: {e}")
+        logger.error(f"Error loading data for athlete {athlete_id}: {e}", exc_info=True)
         return None
+
 
 def get_athlete_zones(athlete_data: dict) -> List[int]:
     """Extract heart rate zones from athlete data."""
