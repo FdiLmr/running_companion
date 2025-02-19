@@ -13,7 +13,7 @@ import json
 logger = logging.getLogger(__name__)
 
 DEBUG_MODE = True  # Set to False in production
-ACTIVITIES_LIMIT = 44 if DEBUG_MODE else 90
+ACTIVITIES_LIMIT = 100 if DEBUG_MODE else 90
 
 def refresh_tokens():    
     try:
@@ -227,6 +227,7 @@ def fetch_strava_data():
                                 # If the file already exists, load the JSON data from disk
                                 with open(file_path, 'r', encoding='utf-8') as f:
                                     this_response = json.load(f)
+                                logger.info(f"Fetching activity {activity_id} from cached file")
                             else:
                                 # Otherwise, fetch the detailed activity data from Strava
                                 url = f'https://www.strava.com/api/v3/activities/{activity_id}'
@@ -236,6 +237,7 @@ def fetch_strava_data():
                                 with open(file_path, 'w', encoding='utf-8') as f:
                                     json.dump(this_response, f, indent=2)
                                 current_api_calls += 1  # Only count an API call if we had to fetch it
+                                logger.info(f"Fetching activity {activity_id} from Strava")
                             
                             activities.append(this_response)
                             new_activities_count += 1
@@ -246,15 +248,15 @@ def fetch_strava_data():
     "1/2 mile": "be_half_mile",
     "1K": "be_1km",
     "1 mile": "be_1_mile",
-    "2 miles": "be_2_miles",
+    "2 mile": "be_2_miles",
     "5K": "be_5km",
     "10K": "be_10km",
     "15K": "be_15km",
-    "10 miles": "be_10_miles",
+    "10 mile": "be_10_miles",
     "20K": "be_20km",
-    "half-marathon": "be_half_marathon",
+    "Half-Marathon": "be_half_marathon",
     "30K": "be_30km",
-    "marathon": "be_marathon",
+    "Marathon": "be_marathon",
     "50K": "be_50km"
 }
                             

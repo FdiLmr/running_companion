@@ -40,25 +40,33 @@
   <h1 class="mb-4">Best Efforts for Athlete {{ athlete_id }}</h1>
 
   <!-- Distance Filter Bar -->
-  <div class="filter-buttons">
-    <button class="btn btn-outline-primary" onclick="filterDistance('all')">All Runs</button>
-    <button class="btn btn-outline-primary" onclick="filterDistance('5km')">5km</button>
-    <button class="btn btn-outline-primary" onclick="filterDistance('10km')">10km</button>
-    <button class="btn btn-outline-primary" onclick="filterDistance('15km')">15km</button>
-    <button class="btn btn-outline-primary" onclick="filterDistance('Half-Marathon')">Half-Marathon</button>
-    <button class="btn btn-outline-primary" onclick="filterDistance('Marathon')">Marathon</button>
-    <button class="btn btn-outline-primary" onclick="filterDistance('50km')">50km</button>
-    <!-- Add more as needed -->
-  </div>
+<div class="filter-buttons">
+  <button class="btn btn-outline-primary" onclick="filterDistance('all')">All Runs</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('400m')">400m</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('1/2 Mile')">1/2 Mile</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('1km')">1km</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('1 Mile')">1 Mile</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('2 Miles')">2 Miles</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('5km')">5km</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('10km')">10km</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('15km')">15km</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('10 Miles')">10 Miles</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('20km')">20km</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('Half-Marathon')">Half-Marathon</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('30km')">30km</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('Marathon')">Marathon</button>
+  <button class="btn btn-outline-primary" onclick="filterDistance('50km')">50km</button>
+</div>
 
-  <!-- Time Filter Bar -->
-  <div class="filter-buttons">
-    <button class="btn btn-outline-secondary" onclick="filterYear('all')">All Time</button>
-    <button class="btn btn-outline-secondary" onclick="filterYear('2025')">2025</button>
-    <button class="btn btn-outline-secondary" onclick="filterYear('2024')">2024</button>
-    <button class="btn btn-outline-secondary" onclick="filterYear('2023')">2023</button>
-    <!-- etc. Add real logic or a loop of available years -->
-  </div>
+<!-- Time Filter Bar -->
+<div class="filter-buttons">
+  <button class="btn btn-outline-secondary" onclick="filterYear('all')">All Time</button>
+  <script>
+      for (let year = 2025; year >= 2019; year--) {
+          document.write(`<button class='btn btn-outline-secondary' onclick="filterYear('${year}')">${year}</button>`);
+      }
+  </script>
+</div>
 
   <!-- Container for best efforts -->
   <div id="efforts-container" class="row">
