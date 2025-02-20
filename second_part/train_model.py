@@ -21,7 +21,7 @@ def prepare_features(features_blocks: pd.DataFrame, athlete_id: Optional[str] = 
         
         # Filter for specific athlete if provided
         if athlete_id:
-            athlete_data = features_blocks[features_blocks['athlete_id'] == athlete_id]
+            athlete_data = features_blocks[features_blocks['athlete_id'] == int(athlete_id)]
             if athlete_data.empty:
                 logger.warning(f"No features data available for athlete {athlete_id}, using all data instead")
                 athlete_data = features_blocks  # Fall back to using all data

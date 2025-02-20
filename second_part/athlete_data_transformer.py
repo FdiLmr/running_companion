@@ -384,11 +384,17 @@ def calculate_training_metrics(block_weeks: pd.DataFrame, athlete_weeks: pd.Data
     ]
     
     for metric_name, col_name in weekly_metrics:
-        block_mean = block_weeks[col_name].mean()
-        athlete_mean = athlete_weeks[col_name].mean()
-        metrics[f'f_avg_weekly_{metric_name}'] = block_mean
-        if athlete_mean:
-            metrics[f'r_avg_weekly_{metric_name}'] = block_mean / athlete_mean
+        if col_name in block_weeks.columns:
+            block_mean = block_weeks[col_name].mean()
+            athlete_mean = athlete_weeks[col_name].mean() if col_name in athlete_weeks.columns else np.nan
+            metrics[f'f_avg_weekly_{metric_name}'] = block_mean
+            if athlete_mean:
+                metrics[f'r_avg_weekly_{metric_name}'] = block_mean / athlete_mean
+        else:
+            # Set default values or skip this metric
+            metrics[f'f_avg_weekly_{metric_name}'] = np.nan
+            metrics[f'r_avg_weekly_{metric_name}'] = np.nan
+
     
     # Calculate heart rate zones
     for zone in range(1, 6):

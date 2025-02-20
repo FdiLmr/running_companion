@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 PB_CONSTANTS = {
     'MIN_DISTANCE': 5000,
     'MAX_DISTANCE': 45000,
-    'MIN_VDOT_INCREASE': 0.2,
-    'MIN_DAYS_BETWEEN_PB': 14
+    'MIN_VDOT_INCREASE': 0.1,
+    'MIN_DAYS_BETWEEN_PB': 7
 }
 
 def calculate_vdot(distance: float, time_minutes: float) -> Tuple[float, float]:
@@ -54,6 +54,10 @@ def get_pbs(activities: List[dict]) -> List[List]:
             continue
 
         if activity['type'] not in ['Run', 'Trail Run'] or 'best_efforts' not in activity:
+            continue
+        
+        # Ignorer le PB du début
+        if activity['id'] == 9009284547:
             continue
 
         for effort in activity['best_efforts']:
