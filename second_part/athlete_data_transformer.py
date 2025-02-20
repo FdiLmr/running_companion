@@ -10,7 +10,7 @@ import ast
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Union
 import logging
-from sql_methods import write_db_replace, read_db
+from sql_methods import write_db_replace, read_db, db
 from search_functions import get_weeks, get_block
 from running_functions import (
     build_pace_to_hr_regressor, 
@@ -19,6 +19,8 @@ from running_functions import (
     get_pbs
 )
 from scipy.stats import linregress
+from datetime import datetime
+from models import MetadataPB
 import os
 import json
 
@@ -189,6 +191,8 @@ def process_pb_blocks(activities: List[dict], athlete_id: str, zones: List[int],
     features_activities = pd.DataFrame()
     features_weeks = pd.DataFrame()
     
+    # significant_pbs is assumed to return lists of
+    # [vdot, predicted marathon time (hrs), pb_date, activity_id, distance_category]
     significant_pbs = get_pbs(activities)
     
     for i, pb in enumerate(significant_pbs):
@@ -199,15 +203,14 @@ def process_pb_blocks(activities: List[dict], athlete_id: str, zones: List[int],
         if len(block) < MIN_ACTIVITIES_PER_BLOCK:
             continue
         
-        if len(significant_pbs) == 1:
-            vdot_delta = 0 
-        else:
-            # If this is the first PB, delta is 0 ? Maybe better thing to do here
-            if i == 0:
-                vdot_delta = 0
-            # Otherwise, compare this PB to the previous PB
-            else:
-                vdot_delta = significant_pbs[i][0] - significant_pbs[i-1][0]
+        # For the current PB, search backwards for the most recent PB with the same distance category.
+        prev_vdot = None
+        for j in range(i - 1, -1, -1):
+            if significant_pbs[j][4] == pb[4]:
+                prev_vdot = significant_pbs[j][0]
+                break
+        
+        vdot_delta = pb[0] - prev_vdot if prev_vdot is not None else 0
         
         # Add block metadata
         block_metadata = {
@@ -226,14 +229,15 @@ def process_pb_blocks(activities: List[dict], athlete_id: str, zones: List[int],
             {'id': athlete_id},     # mock athlete_data dict with required 'id' field
             athlete_id,             # athlete_id
             zones,                  # zones
-            hr_regressor,          # hr_regressor
-            block_id               # block_id
+            hr_regressor,           # hr_regressor
+            block_id                # block_id
         )
         
         features_activities = pd.concat([features_activities, block_activities], ignore_index=True)
         features_weeks = pd.concat([features_weeks, block_weeks], ignore_index=True)
     
     return metadata_blocks, features_activities, features_weeks
+
 
 def calculate_activity_proportions(activities_df: pd.DataFrame, activity_type: Union[int, List[int]]) -> float:
     """Calculate proportion of activities of given type(s)."""
@@ -417,6 +421,37 @@ def calculate_training_metrics(block_weeks: pd.DataFrame, athlete_weeks: pd.Data
     
     return metrics
 
+def process_metadata_pbs(activities, athlete_id):
+    """
+    Process the 'best_efforts' in each activity and insert PB entries
+    into the metadata_pbs table for each distance category where a PB exists.
+    
+    Args:
+        activities (list): List of activity dictionaries (raw JSON data).
+        athlete_id (int or str): The athlete's ID.
+    """
+    for activity in activities:
+        best_efforts = activity.get("best_efforts", [])
+        for effort in best_efforts:
+            # Only process efforts where pr_rank is not null (i.e. it's a PB)
+            if effort.get("pr_rank") is not None:
+                try:
+                    pb_date = datetime.strptime(effort.get("start_date")[:10], '%Y-%m-%d')
+                except Exception as e:
+                    pb_date = None
+                pb = MetadataPB(
+                    athlete_id=str(athlete_id),
+                    distance_category=effort.get("name"),       # e.g., "5K", "10K", etc.
+                    elapsed_time=effort.get("elapsed_time"),
+                    distance=effort.get("distance"),
+                    pr_rank=effort.get("pr_rank"),
+                    start_date=pb_date,
+                    activity_id=str(effort.get("activity", {}).get("id")),
+                    pb_data=effort  # Optionally store the entire effort JSON
+                )
+                db.session.merge(pb)  # merge will update an existing record or insert a new one
+    db.session.commit()
+
 def merge_with_existing_data(new_data: pd.DataFrame, table_name: str) -> pd.DataFrame:
     """Instead of merging, just return the new data."""
     return new_data
@@ -555,8 +590,7 @@ def transform_athlete_data(athlete_id: int, athlete_data: dict = None, populate_
         # Save all dataframes to database directly
         save_dataframes_to_db(dataframes_to_save)
         
-        # Don't update processing status here anymore
-        # The update_data function will handle this
+        process_metadata_pbs(athlete_data["_Activities"], athlete_id)
         
     except Exception as e:
         logger.error(f"Error transforming athlete data: {e}")

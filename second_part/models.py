@@ -199,3 +199,21 @@ class AveragePacesAndHrs(db.Model):
 
     def __repr__(self):
         return f'<AveragePacesAndHrs {self.id} - {self.athlete_id}>'
+    
+
+class MetadataPB(db.Model):
+    __tablename__ = 'metadata_pbs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    athlete_id = db.Column(db.String(100), nullable=False)
+    distance_category = db.Column(db.String(50), nullable=False)  # e.g., "5K", "10K"
+    elapsed_time = db.Column(db.Integer)  # time in seconds for the PB effort
+    distance = db.Column(db.Float)          # distance in meters for the effort
+    pr_rank = db.Column(db.Integer)         # personal best rank (1, 2, or 3)
+    start_date = db.Column(db.DateTime)       # when the PB was set
+    activity_id = db.Column(db.String(100))    # the activity ID associated with this PB
+    pb_data = db.Column(db.JSON)  # (Optional) store the full best effort JSON
+
+    def __repr__(self):
+        return (f'<MetadataPB {self.athlete_id} {self.distance_category} PB: '
+                f'{self.elapsed_time}s, rank {self.pr_rank}>')

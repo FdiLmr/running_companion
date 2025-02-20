@@ -7,12 +7,13 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 import logging
 from activity_functions import get_non_run_activity_data, get_run_activity_data, get_run_hr_pace
+from models import MetadataPB
 
 logger = logging.getLogger(__name__)
 
 # Constants for PB calculations
 PB_CONSTANTS = {
-    'MIN_DISTANCE': 5000,
+    'MIN_DISTANCE': 4900,
     'MAX_DISTANCE': 45000,
     'MIN_VDOT_INCREASE': 0.1,
     'MIN_DAYS_BETWEEN_PB': 7
@@ -42,11 +43,21 @@ def calculate_vdot(distance: float, time_minutes: float) -> Tuple[float, float]:
 
     return vdot, t*60  # Return VDOT and marathon time in seconds
 
+
 def get_pbs(activities: List[dict]) -> List[List]:
-    """Get significant personal bests from activities."""
-    current_marathon_best = 10*60*60
-    current_vdot_best = 0
-    last_pb = datetime.datetime(1900, 1, 1)
+    """
+    Get significant personal bests from activities using metadata_pbs,
+    comparing efforts only against the current best for the same distance category.
+    
+    Returns:
+        List[List]: Each sublist contains [vdot, predicted marathon time (in hours), pb_date, activity_id].
+    """
+    # We'll maintain per-distance-category best values.
+    best_marathon = {}   # Key: distance_category, value: current best predicted marathon time in seconds.
+    best_vdot = {}       # Key: distance_category, value: current best vdot.
+    last_pb = {}         # Key: distance_category, value: last pb date.
+    
+    default_marathon_best = 10 * 60 * 60  # 10 hours in seconds
     significant_pbs = []
 
     for activity in activities:
@@ -55,39 +66,53 @@ def get_pbs(activities: List[dict]) -> List[List]:
 
         if activity['type'] not in ['Run', 'Trail Run'] or 'best_efforts' not in activity:
             continue
-        
-        # Ignorer le PB du début
+
+        # Skip a known non-useful activity if necessary.
         if activity['id'] == 9009284547:
             continue
 
-        for effort in activity['best_efforts']:
-            distance = int(effort['distance'])
-            if not (PB_CONSTANTS['MIN_DISTANCE'] <= distance <= PB_CONSTANTS['MAX_DISTANCE']):
-                continue
+        # Look for a corresponding PB in the metadata_pbs table (with pr_rank == 1)
+        pb_record = MetadataPB.query.filter_by(activity_id=str(activity['id']), pr_rank=1).first()
+        if pb_record is None:
+            continue
 
-            # Calculate VDOT and predicted marathon time
-            vdot, marathon_pred_secs = calculate_vdot(
-                distance=float(effort['distance']),
-                time_minutes=float(effort['elapsed_time']) / 60
-            )
+        # Use the distance_category from the metadata record (e.g., "5K", "10K", etc.)
+        distance_category = pb_record.distance_category
+        distance = int(pb_record.distance)
+        if not (PB_CONSTANTS['MIN_DISTANCE'] <= distance <= PB_CONSTANTS['MAX_DISTANCE']):
+            continue
 
-            if (marathon_pred_secs < current_marathon_best and 
-                (vdot - current_vdot_best > PB_CONSTANTS['MIN_VDOT_INCREASE'])):
+        # Calculate vdot and predicted marathon time using stored elapsed_time and distance
+        vdot, marathon_pred_secs = calculate_vdot(
+            distance=float(pb_record.distance),
+            time_minutes=float(pb_record.elapsed_time) / 60
+        )
+
+        # Initialize the best values for this distance category if not already present
+        if distance_category not in best_marathon:
+            best_marathon[distance_category] = default_marathon_best
+            best_vdot[distance_category] = 0
+            last_pb[distance_category] = datetime.datetime(1900, 1, 1)
+
+        # Compare within the same distance category:
+        if (marathon_pred_secs < best_marathon[distance_category] and 
+            (vdot - best_vdot[distance_category] > PB_CONSTANTS['MIN_VDOT_INCREASE'])):
+            
+            pb_date = pb_record.start_date  # Assumes this is a datetime object
+            if (pb_date - last_pb[distance_category]).days > PB_CONSTANTS['MIN_DAYS_BETWEEN_PB']:
+                # Update the best values for this category
+                best_marathon[distance_category] = marathon_pred_secs
+                best_vdot[distance_category] = vdot
+                last_pb[distance_category] = pb_date
+                logger.info(f"New PB found for {distance_category}: Predicted Marathon time: {marathon_pred_secs/3600:.2f}h, VDOT: {vdot:.1f}, Date: {pb_date}")
                 
-                current_vdot_best = vdot
-                current_marathon_best = marathon_pred_secs
-                pb_date = datetime.datetime.strptime(effort['start_date'][:10], '%Y-%m-%d')
-                
-                if (pb_date - last_pb).days > PB_CONSTANTS['MIN_DAYS_BETWEEN_PB']:
-                    last_pb = pb_date
-                    logger.info(f"New PB found: Predicted Marathon time: {marathon_pred_secs/3600:.2f}h, VDOT: {vdot:.1f}, Date: {pb_date}")
-                    
-                    significant_pbs.append([
-                        vdot,
-                        marathon_pred_secs/3600,
-                        pb_date,
-                        effort['activity']['id']
-                    ])
+                significant_pbs.append([
+                    vdot,
+                    marathon_pred_secs / 3600,
+                    pb_date,
+                    pb_record.activity_id, 
+                    distance_category
+                ])
 
     return significant_pbs
 
