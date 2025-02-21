@@ -7,7 +7,7 @@ import os
 import logging
 import urllib.parse
 from sqlalchemy import inspect, text
-from sql_methods import init_db, db, test_conn_new, read_db, write_db_replace
+from sql_methods import init_db, db, test_conn_new, read_db, write_db_replace, get_db_connection
 from models import (
     ProcessingStatus,
     AthleteStats,
@@ -560,6 +560,81 @@ def activity_details(activity_id):
 @app.route('/dashboard/<athlete_id>')
 def dashboard(athlete_id):
     return render_template('dashboard.html', athlete_id=athlete_id)
+
+@app.route('/api/volume-data/<athlete_id>')
+def volume_data(athlete_id):
+    import pandas as pd
+    # Get query parameters: granularity (weekly or monthly), start_date, end_date
+    granularity = request.args.get('granularity', 'weekly')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    # Build query using MySQL pyformat syntax
+    query = "SELECT id, distance, start_date FROM activities WHERE athlete_id = %(athlete_id)s AND type = 'Run'"
+    params = {'athlete_id': athlete_id}
+    if start_date:
+        query += " AND start_date >= %(start_date)s"
+        params['start_date'] = start_date
+    if end_date:
+        query += " AND start_date <= %(end_date)s"
+        params['end_date'] = end_date
+
+    engine = get_db_connection()
+    df = pd.read_sql_query(query, engine, params=params)
+
+    # Convert start_date column to datetime
+    df['start_date'] = pd.to_datetime(df['start_date'])
+
+    # Determine the overall date range from query parameters or data
+    if start_date:
+        start = pd.to_datetime(start_date)
+    elif not df.empty:
+        start = df['start_date'].min()
+    else:
+        start = pd.Timestamp.today()
+    if end_date:
+        end = pd.to_datetime(end_date)
+    elif not df.empty:
+        end = df['start_date'].max()
+    else:
+        end = pd.Timestamp.today()
+
+    # Depending on granularity, generate complete period range and assign period column
+    if granularity == 'monthly':
+        all_periods = pd.period_range(start=start, end=end, freq='M')
+        df['period'] = df['start_date'].dt.to_period('M')
+    else:
+        # For weekly grouping, we use weeks ending on Sunday (adjust as needed)
+        all_periods = pd.period_range(start=start, end=end, freq='W-SUN')
+        df['period'] = df['start_date'].dt.to_period('W-SUN')
+
+    # Group by period and sum the distance
+    agg = df.groupby('period')['distance'].sum().reset_index()
+
+    # Reindex using the complete period range so missing weeks/months get 0
+    agg = agg.set_index('period').reindex(all_periods, fill_value=0).reset_index()
+    agg.rename(columns={'index': 'period'}, inplace=True)
+
+    # Convert period to string and calculate kilometers
+    agg['period'] = agg['period'].astype(str)
+    agg['distance_km'] = (agg['distance'] / 1000).round(2)
+
+    return jsonify(agg[['period', 'distance_km']].to_dict(orient='records'))
+
+@app.route('/activity/<activity_id>')
+def activity_detail(activity_id):
+    import os, json
+    from flask import abort
+    athlete_id = request.args.get('athlete_id')
+    if not athlete_id:
+        return "Athlete ID required", 400
+    file_path = os.path.join('./data', str(athlete_id), f'{activity_id}.json')
+    if not os.path.exists(file_path):
+        abort(404, description="Activity file not found")
+    with open(file_path, 'r', encoding='utf-8') as f:
+        activity_data = json.load(f)
+    return render_template('activity_detail.html', athlete_id=athlete_id, activity=activity_data)
+
 
 
 
