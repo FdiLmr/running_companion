@@ -32,6 +32,7 @@
                 <th class="sortable" data-sort="max_speed" data-type="number">Max Speed <i class="bi bi-arrow-down-up sort-icon"></i></th>
                 <th class="sortable" data-sort="avg_hr" data-type="number">Avg HR <i class="bi bi-arrow-down-up sort-icon"></i></th>
                 <th class="sortable" data-sort="max_hr" data-type="number">Max HR <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                <th>Detail</th>
             </tr>
         </thead>
         <tbody>
@@ -48,6 +49,11 @@
                 <td data-value="{{ activity.max_speed_raw }}">{{ activity.max_speed }}</td>
                 <td data-value="{{ activity.avg_hr_raw }}">{{ activity.avg_hr }}</td>
                 <td data-value="{{ activity.max_hr_raw }}">{{ activity.max_hr }}</td>
+                <td>
+                    <a href="/activity/{{ activity.id }}?athlete_id={{ athlete_id }}" class="btn btn-info btn-sm">
+                        <i class="bi bi-eye"></i> Detail
+                    </a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -70,10 +76,10 @@
             $('.sortable').removeClass('asc desc');
             $(this).addClass(isAscending ? 'desc' : 'asc');
             
-            // Sort rows
+            // Sort rows based on data-value attribute
             rows.sort(function(a, b) {
-                var aCell = $(a).find(`td[data-value]`).eq($(`.sortable[data-sort="${column}"]`).index());
-                var bCell = $(b).find(`td[data-value]`).eq($(`.sortable[data-sort="${column}"]`).index());
+                var aCell = $(a).find('td[data-value]').eq($(`.sortable[data-sort="${column}"]`).index());
+                var bCell = $(b).find('td[data-value]').eq($(`.sortable[data-sort="${column}"]`).index());
                 var aValue = aCell.data('value');
                 var bValue = bCell.data('value');
                 
