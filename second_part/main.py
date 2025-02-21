@@ -623,17 +623,24 @@ def volume_data(athlete_id):
 
 @app.route('/activity/<activity_id>')
 def activity_detail(activity_id):
-    import os, json
-    from flask import abort
     athlete_id = request.args.get('athlete_id')
     if not athlete_id:
-        return "Athlete ID required", 400
-    file_path = os.path.join('./data', str(athlete_id), f'{activity_id}.json')
-    if not os.path.exists(file_path):
-        abort(404, description="Activity file not found")
-    with open(file_path, 'r', encoding='utf-8') as f:
-        activity_data = json.load(f)
-    return render_template('activity_detail.html', athlete_id=athlete_id, activity=activity_data)
+        return "Athlete ID is required", 400
+
+    query = text("""
+        SELECT athlete_id, block_id, week_id, activity_type, activity_id, elapsed_time, distance, 
+               mean_hr, stdev_hr, freq_hr, time_in_z1, time_in_z2, time_in_z3, time_in_z4, time_in_z5, 
+               elevation, stdev_elevation, freq_elevation, pace, stdev_pace, freq_pace, cadence, athlete_count 
+        FROM all_athlete_activities 
+        WHERE athlete_id = :athlete_id AND activity_id = :activity_id 
+        LIMIT 1
+    """)
+    result = db.session.execute(query, {"athlete_id": athlete_id, "activity_id": activity_id}).fetchone()
+    if not result:
+        abort(404, description="Activity not found")
+    # Convert the SQLAlchemy Row to a dictionary using the _mapping attribute
+    record = dict(result._mapping)
+    return render_template('activity_detail.html', activity=record, athlete_id=athlete_id)
 
 
 
