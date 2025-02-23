@@ -114,12 +114,12 @@ def generate_shap_plots(regressor: RandomForestRegressor, X: np.ndarray, feature
         shap_values = explainer.shap_values(X)
         
         # Create static/shap_plots directory if it doesn't exist
-        os.makedirs('second_part/static/shap_plots', exist_ok=True)
+        os.makedirs('static/shap_plots', exist_ok=True)
         
         # Generate and save summary plot
         shap.summary_plot(shap_values, pd.DataFrame(X, columns=feature_names), show=False)
         plt.tight_layout()
-        summary_filename = f'second_part/static/shap_plots/{plot_type}_summary_{athlete_id}.png' if athlete_id else f'shap_plots/{plot_type}_summary.png'
+        summary_filename = f'static/shap_plots/{plot_type}_summary_{athlete_id}.png' if athlete_id else f'shap_plots/{plot_type}_summary.png'
         plt.savefig(summary_filename)
         plt.close()
         
@@ -127,7 +127,7 @@ def generate_shap_plots(regressor: RandomForestRegressor, X: np.ndarray, feature
         plt.clf()
         shap.summary_plot(shap_values, pd.DataFrame(X, columns=feature_names), plot_type="bar", show=False)
         plt.tight_layout()
-        bar_filename = f'second_part/static/shap_plots/{plot_type}_bar_{athlete_id}.png' if athlete_id else f'shap_plots/{plot_type}_bar.png'
+        bar_filename = f'static/shap_plots/{plot_type}_bar_{athlete_id}.png' if athlete_id else f'shap_plots/{plot_type}_bar.png'
         plt.savefig(bar_filename)
         plt.close()
         
