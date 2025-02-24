@@ -1,56 +1,119 @@
 {% extends "base.html" %}
 
-{% block title %}Training Analysis - Strava Analysis{% endblock %}
+{% block title %}Training Analysis - Running Companion{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1 class="mb-4">Training Analysis</h1>
-    
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="card-title">Performance Analysis</h2>
-                    <p class="card-text text-muted">
-                        This visualization shows how your training compares to other athletes, highlighting areas where you excel and areas for potential improvement.
-                    </p>
-                    <div class="text-center">
-                        <a href="{{ url_for('visualize_performance', athlete_id=athlete_id) }}?v={{ random_num }}" 
-                           class="btn btn-primary" 
-                           target="_blank">
-                            <i class="bi bi-bar-chart"></i> View Performance Analysis
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="card-title">Improvement Potential</h2>
-                    <p class="card-text text-muted">
-                        This visualization shows how your training adaptations compare to other athletes, indicating which aspects of your training could lead to the most improvement.
-                    </p>
-                    <div class="text-center">
-                        <a href="{{ url_for('visualize_improvement', athlete_id=athlete_id) }}?v={{ random_num }}" 
-                           class="btn btn-primary" 
-                           target="_blank">
-                            <i class="bi bi-bar-chart"></i> View Improvement Analysis
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="mb-6">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+    <h1 class="text-2xl font-bold text-gray-900">Training Analysis</h1>
+    <div class="mt-4 md:mt-0">
+      <a href="/view_athletes" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+        </svg>
+        Back to Athletes
+      </a>
     </div>
-    
-    <div class="text-center mt-4">
-        <a href="/view_athletes" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Athletes
+  </div>
+</div>
+
+<!-- Analysis Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  <!-- Performance Analysis Card -->
+  <div class="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <div class="p-6">
+      <div class="flex items-center mb-4">
+        <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <h2 class="ml-3 text-xl font-bold text-gray-900">Performance Analysis</h2>
+      </div>
+      <p class="text-gray-600 mb-6">
+        This visualization shows how your training compares to other athletes, highlighting areas where you excel and areas for potential improvement.
+      </p>
+      <div class="space-y-3">
+        <a href="{{ url_for('visualize_performance', athlete_id=athlete_id) }}?v={{ random_num }}" 
+           class="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          View Performance Analysis
         </a>
-        <a href="{{ url_for('visualize_performance', athlete_id=athlete_id) }}" class="btn btn-primary">View Performance</a>
-        <a href="{{ url_for('visualize_improvement', athlete_id=athlete_id) }}" class="btn btn-success">View Improvement</a>
-        <a href="{{ url_for('model_results', athlete_id=athlete_id) }}" class="btn btn-info">View Model Analysis</a>
+      </div>
     </div>
+  </div>
+  
+  <!-- Improvement Potential Card -->
+  <div class="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <div class="p-6">
+      <div class="flex items-center mb-4">
+        <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <h2 class="ml-3 text-xl font-bold text-gray-900">Improvement Potential</h2>
+      </div>
+      <p class="text-gray-600 mb-6">
+        This visualization shows how your training adaptations compare to other athletes, indicating which aspects of your training could lead to the most improvement.
+      </p>
+      <div class="space-y-3">
+        <a href="{{ url_for('visualize_improvement', athlete_id=athlete_id) }}?v={{ random_num }}" 
+           class="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+          View Improvement Analysis
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Model Analysis Card -->
+<div class="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 mb-8">
+  <div class="p-6">
+    <div class="flex items-center mb-4">
+      <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+        </svg>
+      </div>
+      <h2 class="ml-3 text-xl font-bold text-gray-900">Model Analysis</h2>
+    </div>
+    <p class="text-gray-600 mb-6">
+      View detailed machine learning model analysis of your training data, including feature importance and prediction accuracy.
+    </p>
+    <div class="space-y-3">
+      <a href="{{ url_for('model_results', athlete_id=athlete_id) }}" 
+         class="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+        View Model Analysis
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Additional Navigation -->
+<div class="flex flex-wrap justify-center gap-4">
+  <a href="{{ url_for('visualize_performance', athlete_id=athlete_id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+    Performance
+  </a>
+  <a href="{{ url_for('visualize_improvement', athlete_id=athlete_id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+    Improvement
+  </a>
+  <a href="{{ url_for('model_results', athlete_id=athlete_id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+    </svg>
+    Model Analysis
+  </a>
+  <a href="{{ url_for('dashboard', athlete_id=athlete_id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+    Dashboard
+  </a>
 </div>
 {% endblock %}
