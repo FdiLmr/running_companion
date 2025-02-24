@@ -1,29 +1,61 @@
 {% extends "base.html" %}
 
-{% block title %}Processing - Strava Analysis{% endblock %}
+{% block title %}Processing - Running Companion{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 mb-5">
-        <h3><font color="red">Your activities are being analysed!</font></h3>
-        <hr>
-        <p>
-            Sorry! The system is under some heavy load right now, and is constrained by the limits of Strava's API. 
-            Please come back in a day, and we'll process your stuff in the meantime.
+<div class="max-w-3xl mx-auto py-8">
+  <div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <div class="px-6 py-8">
+      <div class="flex flex-col items-center text-center mb-8">
+        <div class="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-strava-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Your activities are being analyzed!</h1>
+        <div class="w-16 h-1 bg-strava-orange rounded-full mb-4"></div>
+        <p class="text-gray-600 max-w-lg">
+          The system is currently processing your activities but is constrained by the limits of Strava's API. 
+          Please check back in 24 hours, and we'll process your data in the meantime.
         </p>
-        
-        <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle"></i>
-            You need more than 3 months' data, at least one race where you scored a Strava PB, 
-            and more than 20 runs to get an analysis - otherwise, there is insufficient data to 
-            make any conclusions about your training plan.
+      </div>
+      
+      <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-8">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-amber-700">
+              <strong>Data requirements:</strong> You need more than 3 months' data, at least one race where you scored a Strava PB, 
+              and more than 20 runs to get a meaningful analysis. Otherwise, there is insufficient data to 
+              make any conclusions about your training plan.
+            </p>
+          </div>
         </div>
-
-        <div class="mt-4">
-            <button onclick="window.location.reload()" class="btn btn-primary">
-                <i class="bi bi-arrow-clockwise"></i> Check Status
-            </button>
-        </div>
+      </div>
+      
+      <div class="flex justify-center">
+        <button onclick="window.location.reload()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange transition-colors duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Check Status
+        </button>
+      </div>
     </div>
+    
+    <!-- Progress Animation -->
+    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+      <div class="relative pt-1">
+        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+          <div class="animate-pulse bg-strava-orange-light w-full h-full text-center text-white rounded"></div>
+        </div>
+        <p class="text-center text-sm text-gray-500">Processing your activities...</p>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
