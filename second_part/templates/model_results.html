@@ -1,67 +1,145 @@
 {% extends "base.html" %}
 
+{% block title %}Model Results - Athlete {{ athlete_id }}{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Model Results for Athlete {{ athlete_id }}</h2>
-    
-    {% if error_message %}
-    <div class="alert alert-danger">
-        {{ error_message }}
+<div class="mb-6">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+    <h1 class="text-2xl font-bold text-gray-900">Model Results for Athlete {{ athlete_id }}</h1>
+    <div class="mt-4 md:mt-0 space-x-2">
+      <a href="{{ url_for('train_model_route', athlete_id=athlete_id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Retrain Model
+      </a>
+      <a href="{{ url_for('visualize', athlete_id=athlete_id) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+        </svg>
+        Back to Visualizations
+      </a>
     </div>
-    {% endif %}
-    
-    {% if model_outputs %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4>Model Performance</h4>
+  </div>
+  
+  {% if error_message %}
+  <div class="mt-4 rounded-md bg-red-50 p-4">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-sm font-medium text-red-800">Error</h3>
+        <div class="mt-2 text-sm text-red-700">
+          <p>{{ error_message }}</p>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Absolute VDOT Model</h5>
-                    <p>R² Score: {{ model_outputs.absolute_vdot_score|round(3) }}</p>
-                </div>
-                <div class="col-md-6">
-                    <h5>VDOT Change Model</h5>
-                    <p>R² Score: {{ model_outputs.vdot_change_score|round(3) }}</p>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4>Absolute VDOT SHAP Plots</h4>
-                </div>
-                <div class="card-body">
-                    <img src="{{ url_for('static', filename='shap_plots/absolute_vdot_summary_' + athlete_id + '.png') }}" 
-                         class="img-fluid mb-3" alt="Absolute VDOT SHAP Summary Plot">
-                    <img src="{{ url_for('static', filename='shap_plots/absolute_vdot_bar_' + athlete_id + '.png') }}" 
-                         class="img-fluid" alt="Absolute VDOT SHAP Bar Plot">
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4>VDOT Change SHAP Plots</h4>
-                </div>
-                <div class="card-body">
-                    <img src="{{ url_for('static', filename='shap_plots/vdot_change_summary_' + athlete_id + '.png') }}" 
-                         class="img-fluid mb-3" alt="VDOT Change SHAP Summary Plot">
-                    <img src="{{ url_for('static', filename='shap_plots/vdot_change_bar_' + athlete_id + '.png') }}" 
-                         class="img-fluid" alt="VDOT Change SHAP Bar Plot">
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <div class="text-center mt-3">
-        <a href="{{ url_for('train_model_route', athlete_id=athlete_id) }}" class="btn btn-primary">Retrain Model</a>
-        <a href="{{ url_for('visualize', athlete_id=athlete_id) }}" class="btn btn-secondary">Back to Visualizations</a>
-    </div>
+  </div>
+  {% endif %}
 </div>
+
+{% if model_outputs %}
+<!-- Model Performance Overview -->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+  <div class="px-4 py-5 sm:px-6 bg-gray-50">
+    <h3 class="text-lg leading-6 font-medium text-gray-900">Model Performance</h3>
+    <p class="mt-1 max-w-2xl text-sm text-gray-500">Key metrics indicating the quality of predictions.</p>
+  </div>
+  <div class="border-t border-gray-200">
+    <dl>
+      <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-2 sm:gap-4 sm:px-6">
+        <div class="space-y-1">
+          <dt class="text-sm font-medium text-gray-500">Absolute VDOT Model</dt>
+          <dd class="mt-1 text-lg font-semibold text-gray-900">R² Score: {{ model_outputs.absolute_vdot_score|round(3) }}</dd>
+          <dd class="text-xs text-gray-500">Indicates how well the model predicts overall fitness level.</dd>
+        </div>
+        <div class="space-y-1 mt-4 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500">VDOT Change Model</dt>
+          <dd class="mt-1 text-lg font-semibold text-gray-900">R² Score: {{ model_outputs.vdot_change_score|round(3) }}</dd>
+          <dd class="text-xs text-gray-500">Indicates how well the model predicts fitness improvements over time.</dd>
+        </div>
+      </div>
+    </dl>
+  </div>
+</div>
+
+<!-- SHAP Plots -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <!-- Absolute VDOT SHAP Plots -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 bg-gray-50">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Absolute VDOT SHAP Plots</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Feature importance for overall fitness prediction.</p>
+    </div>
+    <div class="border-t border-gray-200 p-4">
+      <div class="space-y-4">
+        <div class="overflow-hidden rounded-lg border border-gray-200">
+          <img src="{{ url_for('static', filename='shap_plots/absolute_vdot_summary_' + athlete_id + '.png') }}" 
+               class="w-full h-auto" alt="Absolute VDOT SHAP Summary Plot">
+        </div>
+        <div class="overflow-hidden rounded-lg border border-gray-200">
+          <img src="{{ url_for('static', filename='shap_plots/absolute_vdot_bar_' + athlete_id + '.png') }}" 
+               class="w-full h-auto" alt="Absolute VDOT SHAP Bar Plot">
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- VDOT Change SHAP Plots -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 bg-gray-50">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">VDOT Change SHAP Plots</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Feature importance for fitness improvement prediction.</p>
+    </div>
+    <div class="border-t border-gray-200 p-4">
+      <div class="space-y-4">
+        <div class="overflow-hidden rounded-lg border border-gray-200">
+          <img src="{{ url_for('static', filename='shap_plots/vdot_change_summary_' + athlete_id + '.png') }}" 
+               class="w-full h-auto" alt="VDOT Change SHAP Summary Plot">
+        </div>
+        <div class="overflow-hidden rounded-lg border border-gray-200">
+          <img src="{{ url_for('static', filename='shap_plots/vdot_change_bar_' + athlete_id + '.png') }}" 
+               class="w-full h-auto" alt="VDOT Change SHAP Bar Plot">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Explanation -->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+  <div class="px-4 py-5 sm:px-6 bg-gray-50">
+    <h3 class="text-lg leading-6 font-medium text-gray-900">Understanding SHAP Values</h3>
+    <p class="mt-1 max-w-2xl text-sm text-gray-500">How to interpret the model insights above.</p>
+  </div>
+  <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+    <div class="prose prose-sm max-w-none text-gray-700">
+      <p>SHAP (SHapley Additive exPlanations) values help explain the output of machine learning models. They show how much each feature contributes to pushing the model output from the base value (average prediction) to the actual prediction for a specific instance.</p>
+      <p class="mt-2">In the plots above:</p>
+      <ul class="mt-2 list-disc list-inside space-y-1">
+        <li><strong>Summary Plot:</strong> Shows the distribution of SHAP values for each feature. Features are ordered by importance, with the most important at the top.</li>
+        <li><strong>Bar Plot:</strong> Shows the average magnitude of SHAP values for each feature, providing a simple ranking of feature importance.</li>
+      </ul>
+      <p class="mt-2">Red points indicate higher feature values, while blue points indicate lower values. If red points have positive SHAP values, it means higher values of that feature tend to increase the prediction.</p>
+    </div>
+  </div>
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="bg-white shadow rounded-lg p-8 text-center">
+  <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+  </svg>
+  <h3 class="mt-2 text-sm font-medium text-gray-900">No model results available</h3>
+  <p class="mt-1 text-sm text-gray-500">Click the button below to train a model for this athlete.</p>
+  <div class="mt-6">
+    <a href="{{ url_for('train_model_route', athlete_id=athlete_id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+      Train Model
+    </a>
+  </div>
+</div>
+{% endif %}
 {% endblock %} 
