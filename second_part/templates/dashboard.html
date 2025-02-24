@@ -2,94 +2,451 @@
 {% block title %}Dashboard - Athlete {{ athlete_id }}{% endblock %}
 
 {% block content %}
-<h1>Dashboard for Athlete {{ athlete_id }}</h1>
+<div x-data="dashboard">
+  <!-- Dashboard Header -->
+  <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+    <h1 class="text-2xl font-bold text-gray-900">Dashboard for Athlete {{ athlete_id }}</h1>
+    <div class="mt-4 md:mt-0 flex space-x-2">
+      <a href="/view_best_efforts/{{ athlete_id }}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        Best Efforts
+      </a>
+      <a href="/view_stats/{{ athlete_id }}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        Detailed Stats
+      </a>
+    </div>
+  </div>
 
-<!-- Graph Type Selector -->
-<div class="mt-4">
-  <label for="graph-type-select">Select Graph:</label>
-  <select id="graph-type-select" onchange="changeGraphType()">
-    <!-- Set volume as the default selection -->
-    <option value="volume" selected>Running Volume</option>
-    <option value="timeSeries">Run Distances Over Time</option>
-  </select>
+  <!-- Dashboard Navigation Tabs -->
+  <div class="border-b border-gray-200 mb-6">
+    <nav class="-mb-px flex space-x-6">
+      <button @click="setActiveTab('overview')" :class="{'border-strava-orange text-strava-orange': activeTab === 'overview', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'overview'}" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+        Overview
+      </button>
+      <button @click="setActiveTab('running')" :class="{'border-strava-orange text-strava-orange': activeTab === 'running', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'running'}" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+        Running Volume
+      </button>
+      <button @click="setActiveTab('trends')" :class="{'border-strava-orange text-strava-orange': activeTab === 'trends', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'trends'}" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+        Training Trends
+      </button>
+      <button @click="setActiveTab('activities')" :class="{'border-strava-orange text-strava-orange': activeTab === 'activities', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'activities'}" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+        Recent Activities
+      </button>
+    </nav>
+  </div>
+
+  <!-- Overview Tab -->
+  <div x-show="activeTab === 'overview'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+    <!-- Summary Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <!-- Weekly Distance -->
+      <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <div class="flex justify-between">
+          <h3 class="text-sm font-medium text-gray-500">Weekly Distance</h3>
+          <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">+12%</span>
+        </div>
+        <div class="mt-2 flex items-baseline">
+          <p class="text-2xl font-semibold text-gray-900" id="weekly-distance">--</p>
+          <p class="ml-1 text-sm text-gray-500">km</p>
+        </div>
+        <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+          <div class="bg-strava-orange h-1.5 rounded-full" style="width: 65%"></div>
+        </div>
+      </div>
+      
+      <!-- Monthly Distance -->
+      <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <div class="flex justify-between">
+          <h3 class="text-sm font-medium text-gray-500">Monthly Distance</h3>
+          <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">+5%</span>
+        </div>
+        <div class="mt-2 flex items-baseline">
+          <p class="text-2xl font-semibold text-gray-900" id="monthly-distance">--</p>
+          <p class="ml-1 text-sm text-gray-500">km</p>
+        </div>
+        <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+          <div class="bg-strava-orange h-1.5 rounded-full" style="width: 45%"></div>
+        </div>
+      </div>
+      
+      <!-- Average Pace -->
+      <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <div class="flex justify-between">
+          <h3 class="text-sm font-medium text-gray-500">Average Pace</h3>
+          <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Steady</span>
+        </div>
+        <div class="mt-2 flex items-baseline">
+          <p class="text-2xl font-semibold text-gray-900" id="average-pace">--</p>
+          <p class="ml-1 text-sm text-gray-500">min/km</p>
+        </div>
+        <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+          <div class="bg-blue-500 h-1.5 rounded-full" style="width: 72%"></div>
+        </div>
+      </div>
+      
+      <!-- Training Load -->
+      <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <div class="flex justify-between">
+          <h3 class="text-sm font-medium text-gray-500">Training Load</h3>
+          <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Moderate</span>
+        </div>
+        <div class="mt-2 flex items-baseline">
+          <p class="text-2xl font-semibold text-gray-900" id="training-load">--</p>
+          <p class="ml-1 text-sm text-gray-500">ATL</p>
+        </div>
+        <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+          <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 58%"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Weekly Distance Breakdown -->
+      <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <h3 class="text-base font-medium text-gray-900 mb-4">Weekly Running Volume</h3>
+        <div style="height: 250px; position: relative;">
+          <canvas id="weekly-volume-chart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Heart Rate Zone Distribution -->
+      <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <h3 class="text-base font-medium text-gray-900 mb-4">Heart Rate Zone Distribution</h3>
+        <div style="height: 250px; position: relative;">
+          <canvas id="hr-zones-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Running Volume Tab -->
+  <div x-show="activeTab === 'running'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+      <div class="flex flex-col md:flex-row justify-between mb-4">
+        <h3 class="text-base font-medium text-gray-900 mb-2 md:mb-0">Running Volume</h3>
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center">
+            <label for="granularity-select" class="mr-2 text-sm text-gray-500">View:</label>
+            <select id="granularity-select" class="block w-28 pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-strava-orange focus:border-strava-orange rounded-md shadow-sm">
+              <option value="weekly" selected>Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div class="flex items-center">
+            <label for="volume-start-date" class="mx-2 text-sm text-gray-500">From:</label>
+            <input type="date" id="volume-start-date" class="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-strava-orange focus:border-strava-orange rounded-md shadow-sm">
+          </div>
+          <div class="flex items-center">
+            <label for="volume-end-date" class="mx-2 text-sm text-gray-500">To:</label>
+            <input type="date" id="volume-end-date" class="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-strava-orange focus:border-strava-orange rounded-md shadow-sm">
+          </div>
+          <button onclick="loadVolumeChart()" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Update
+          </button>
+        </div>
+      </div>
+      <div style="height: 300px; position: relative; max-width: 100%; overflow: hidden;">
+        <canvas id="volume-chart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Training Trends Tab -->
+  <div x-show="activeTab === 'trends'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+      <h3 class="text-base font-medium text-gray-900 mb-4">Training Trends</h3>
+      <div id="time-series-chart-container">
+        <canvas id="time-series-chart" height="300"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activities Tab -->
+  <div x-show="activeTab === 'activities'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-medium text-gray-900">Recent Activities</h3>
+        <a href="/view_activities/{{ athlete_id }}" class="text-strava-orange hover:text-strava-orange-dark text-sm font-medium">
+          View All
+        </a>
+      </div>
+      <div id="recent-activities">
+        <div class="animate-pulse">
+          <div class="h-14 bg-gray-200 rounded-md mb-3"></div>
+          <div class="h-14 bg-gray-200 rounded-md mb-3"></div>
+          <div class="h-14 bg-gray-200 rounded-md mb-3"></div>
+          <div class="h-14 bg-gray-200 rounded-md"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Time Series Chart Container (hidden by default) -->
-<div id="time-series-chart-container" style="display:none;">
-  <div id="time-series-chart" style="width:100%;height:500px;"></div>
-</div>
+{% endblock %}
 
-<!-- Volume Chart Container (visible by default) -->
-<div id="volume-chart-container">
-  <h3>Running Volume</h3>
-  <label for="granularity-select">Granularity:</label>
-  <select id="granularity-select">
-    <option value="weekly" selected>Weekly</option>
-    <option value="monthly">Monthly</option>
-  </select>
-  <label for="volume-start-date">Start Date:</label>
-  <input type="date" id="volume-start-date">
-  <label for="volume-end-date">End Date:</label>
-  <input type="date" id="volume-end-date">
-  <button onclick="loadVolumeChart()">Load Volume Chart</button>
-  <div id="volume-chart" style="width:100%;height:500px;"></div>
-</div>
-
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% block extra_js %}
 <script>
   var athleteId = "{{ athlete_id }}";
-
-  // On page load, set default date values: January 1st to today.
+  var weeklyVolumeChart = null;
+  var hrZonesChart = null;
+  var volumeChartInstance = null;
+  
+  // On page load, set default date values and load data
   window.onload = function() {
+    setupDateRanges();
+    loadDashboardData();
+    loadVolumeChart();
+  };
+  
+  function setupDateRanges() {
     var today = new Date();
     var yyyy = today.getFullYear();
     var mm = String(today.getMonth() + 1).padStart(2, '0'); // Month is zero-indexed.
     var dd = String(today.getDate()).padStart(2, '0');
+    
     // Format today's date in yyyy-mm-dd
     var todayStr = yyyy + '-' + mm + '-' + dd;
-    // Set start date to January 1 of current year
-    var startDateStr = yyyy + '-01-01';
+    
+    // Set start date to 3 months ago
+    var startDate = new Date();
+    startDate.setMonth(today.getMonth() - 3);
+    var startYYYY = startDate.getFullYear();
+    var startMM = String(startDate.getMonth() + 1).padStart(2, '0');
+    var startDD = String(startDate.getDate()).padStart(2, '0');
+    var startDateStr = startYYYY + '-' + startMM + '-' + startDD;
+    
     document.getElementById('volume-start-date').value = startDateStr;
     document.getElementById('volume-end-date').value = todayStr;
-    // Load volume chart automatically
-    loadVolumeChart();
-  };
-
-  // Function to switch between graphs
-  function changeGraphType() {
-    var type = document.getElementById('graph-type-select').value;
-    if (type === 'timeSeries') {
-      document.getElementById('time-series-chart-container').style.display = '';
-      document.getElementById('volume-chart-container').style.display = 'none';
-    } else if (type === 'volume') {
-      document.getElementById('time-series-chart-container').style.display = 'none';
-      document.getElementById('volume-chart-container').style.display = '';
-    }
   }
-
+  
+  function loadDashboardData() {
+    // Load summary data and charts
+    fetch('/api/dashboard-data/' + athleteId)
+      .then(response => response.json())
+      .then(data => {
+        // Update summary metrics
+        document.getElementById('weekly-distance').textContent = data.weekly_distance || '0';
+        document.getElementById('monthly-distance').textContent = data.monthly_distance || '0';
+        document.getElementById('average-pace').textContent = data.average_pace || '0:00';
+        document.getElementById('training-load').textContent = data.training_load || '0';
+        
+        // Destroy previous charts if they exist
+        if (hrZonesChart) {
+          hrZonesChart.destroy();
+        }
+        
+        if (weeklyVolumeChart) {
+          weeklyVolumeChart.destroy();
+        }
+        
+        // Load HR zone distribution chart
+        const hrZonesCtx = document.getElementById('hr-zones-chart').getContext('2d');
+        hrZonesChart = new Chart(hrZonesCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5'],
+            datasets: [{
+              data: data.hr_zones || [20, 40, 20, 15, 5],
+              backgroundColor: [
+                '#BAF3DB', // Light green - Z1
+                '#60C6A8', // Green - Z2
+                '#FFDD57', // Yellow - Z3
+                '#FF9F40', // Orange - Z4
+                '#FF6B6B'  // Red - Z5
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  boxWidth: 15,
+                  padding: 15
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return `${context.label}: ${context.raw}%`;
+                  }
+                }
+              }
+            },
+            cutout: '70%',
+            animation: {
+              duration: 500
+            }
+          }
+        });
+        
+        // Load weekly volume chart
+        const weeklyVolumeCtx = document.getElementById('weekly-volume-chart').getContext('2d');
+        weeklyVolumeChart = new Chart(weeklyVolumeCtx, {
+          type: 'bar',
+          data: {
+            labels: data.weekly_labels || ['Last Week', '2 Weeks Ago', '3 Weeks Ago', '4 Weeks Ago'],
+            datasets: [{
+              label: 'Distance (km)',
+              data: data.weekly_volumes || [0, 0, 0, 0],
+              backgroundColor: [
+                'rgba(252, 82, 0, 0.8)',
+                'rgba(252, 82, 0, 0.6)',
+                'rgba(252, 82, 0, 0.4)',
+                'rgba(252, 82, 0, 0.2)'
+              ],
+              borderColor: [
+                'rgba(252, 82, 0, 1)',
+                'rgba(252, 82, 0, 1)',
+                'rgba(252, 82, 0, 1)',
+                'rgba(252, 82, 0, 1)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Distance (km)'
+                }
+              }
+            },
+            animation: {
+              duration: 500
+            }
+          }
+        });
+        
+        // Load recent activities
+        if (data.recent_activities && data.recent_activities.length > 0) {
+          const recentActivitiesEl = document.getElementById('recent-activities');
+          recentActivitiesEl.innerHTML = '';
+          
+          data.recent_activities.slice(0, 5).forEach(activity => {
+            const date = new Date(activity.date);
+            const formattedDate = date.toLocaleDateString();
+            
+            recentActivitiesEl.innerHTML += `
+              <div class="flex items-center py-3 border-b border-gray-200 last:border-0">
+                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-strava-orange-light text-white flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <div class="ml-3 flex-1">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-900">${activity.name}</p>
+                    <p class="text-sm text-gray-500">${formattedDate}</p>
+                  </div>
+                  <div class="flex items-center text-sm text-gray-500">
+                    <span class="mr-3">${activity.distance} km</span>
+                    <span class="mr-3">${activity.time}</span>
+                    <span>${activity.average_speed}</span>
+                  </div>
+                </div>
+                <a href="/activity/${activity.id}?athlete_id=${athleteId}" class="ml-2 text-gray-400 hover:text-strava-orange">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            `;
+          });
+        }
+      })
+      .catch(error => console.error('Error loading dashboard data:', error));
+  }
+  
   // Function to load the Running Volume chart
   function loadVolumeChart() {
     var granularity = document.getElementById('granularity-select').value;
     var startDate = document.getElementById('volume-start-date').value;
     var endDate = document.getElementById('volume-end-date').value;
+    
     fetch('/api/volume-data/' + athleteId + '?granularity=' + granularity + '&start_date=' + startDate + '&end_date=' + endDate)
       .then(response => response.json())
       .then(data => {
-           var periods = data.map(item => item.period);
-           var distances = data.map(item => item.distance_km);
-           var trace = {
-               x: periods,
-               y: distances,
-               type: 'bar'
-           };
-           var layout = {
-               title: 'Running Volume (' + granularity + ')',
-               xaxis: { title: granularity === 'monthly' ? 'Month' : 'Week' },
-               yaxis: { title: 'Distance (km)' }
-           };
-           Plotly.newPlot('volume-chart', [trace], layout);
+        var periods = data.map(item => item.period);
+        var distances = data.map(item => item.distance_km);
+        
+        // Create chart with Chart.js
+        const volumeChart = document.getElementById('volume-chart');
+        
+        // Check if chart instance already exists and destroy it
+        if (volumeChartInstance) {
+          volumeChartInstance.destroy();
+        }
+        
+        volumeChartInstance = new Chart(volumeChart, {
+          type: 'bar',
+          data: {
+            labels: periods,
+            datasets: [{
+              label: 'Distance (km)',
+              data: distances,
+              backgroundColor: 'rgba(252, 82, 0, 0.7)',
+              borderColor: 'rgba(252, 82, 0, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Distance (km)'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: granularity === 'monthly' ? 'Month' : 'Week'
+                }
+              }
+            },
+            animation: {
+              duration: 500
+            }
+          }
+        });
       })
       .catch(error => console.error('Error loading volume chart:', error));
   }
+  
+  // Prevent resize loops by disabling auto-resizing during tab switches
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('dashboard', () => ({
+      activeTab: 'overview',
+      setActiveTab(tab) {
+        this.activeTab = tab;
+        // Small delay to make sure DOM is updated before resizing charts
+        setTimeout(() => {
+          if (hrZonesChart) hrZonesChart.resize();
+          if (weeklyVolumeChart) weeklyVolumeChart.resize();
+          if (volumeChartInstance) volumeChartInstance.resize();
+        }, 50);
+      }
+    }));
+  });
 </script>
 {% endblock %}
