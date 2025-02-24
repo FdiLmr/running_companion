@@ -1,57 +1,88 @@
 {% extends "base.html" %}
 
-{% block title %}Stats - Strava Analysis{% endblock %}
+{% block title %}Stats - Running Companion{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Statistics for Athlete {{ stats.athlete_id }}</h2>
-    <a href="/view_activities/{{ stats.athlete_id }}" class="btn btn-primary">
-        <i class="bi bi-activity"></i> View Activities
+<div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+  <h1 class="text-2xl font-bold text-gray-900">Statistics for Athlete {{ stats.athlete_id }}</h1>
+  <div class="mt-4 md:mt-0 space-x-2">
+    <a href="/view_activities/{{ stats.athlete_id }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+      </svg>
+      View Activities
     </a>
+    <a href="/dashboard/{{ stats.athlete_id }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+      Dashboard
+    </a>
+  </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h4>Recent Run Totals</h4>
-            </div>
-            <div class="card-body">
-                {% for key, value in stats.recent_run_totals.items() %}
-                    <p><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
-                {% endfor %}
-            </div>
-        </div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+  <!-- Recent Run Totals -->
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-strava-orange to-strava-orange-light">
+      <h3 class="text-lg leading-6 font-medium text-white">Recent Run Totals</h3>
+      <p class="mt-1 max-w-2xl text-sm text-white opacity-80">Recent running activity summary</p>
     </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h4>All Run Totals</h4>
-            </div>
-            <div class="card-body">
-                {% for key, value in stats.all_run_totals.items() %}
-                    <p><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
-                {% endfor %}
-            </div>
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+      <dl class="sm:divide-y sm:divide-gray-200">
+        {% for key, value in stats.recent_run_totals.items() %}
+        <div class="py-3 sm:py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">{{ key.replace('_', ' ').title() }}</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ value }}</dd>
         </div>
+        {% endfor %}
+      </dl>
     </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h4>All Ride Totals</h4>
-            </div>
-            <div class="card-body">
-                {% for key, value in stats.all_ride_totals.items() %}
-                    <p><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
-                {% endfor %}
-            </div>
+  </div>
+  
+  <!-- All Run Totals -->
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-green-500 to-green-400">
+      <h3 class="text-lg leading-6 font-medium text-white">All Run Totals</h3>
+      <p class="mt-1 max-w-2xl text-sm text-white opacity-80">Lifetime running statistics</p>
+    </div>
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+      <dl class="sm:divide-y sm:divide-gray-200">
+        {% for key, value in stats.all_run_totals.items() %}
+        <div class="py-3 sm:py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">{{ key.replace('_', ' ').title() }}</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ value }}</dd>
         </div>
+        {% endfor %}
+      </dl>
     </div>
+  </div>
+  
+  <!-- All Ride Totals -->
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-blue-500 to-blue-400">
+      <h3 class="text-lg leading-6 font-medium text-white">All Ride Totals</h3>
+      <p class="mt-1 max-w-2xl text-sm text-white opacity-80">Lifetime cycling statistics</p>
+    </div>
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+      <dl class="sm:divide-y sm:divide-gray-200">
+        {% for key, value in stats.all_ride_totals.items() %}
+        <div class="py-3 sm:py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">{{ key.replace('_', ' ').title() }}</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ value }}</dd>
+        </div>
+        {% endfor %}
+      </dl>
+    </div>
+  </div>
 </div>
 
-<div class="mt-4">
-    <a href="/view_athletes" class="btn btn-secondary">Back to Athletes</a>
+<div class="mt-6">
+  <a href="/view_athletes" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+    </svg>
+    Back to Athletes
+  </a>
 </div>
 {% endblock %}
