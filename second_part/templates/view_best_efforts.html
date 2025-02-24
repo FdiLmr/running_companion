@@ -1,110 +1,131 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Best Efforts for Athlete {{ athlete_id }}</title>
-  <!-- Example: Using Bootstrap 5 -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-  >
-  <style>
-    /* Example custom styles for the cards */
-    .effort-card {
-      margin-bottom: 1rem;
-    }
-    .effort-time {
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-    .effort-activity-name {
-      font-weight: 500;
-      color: #333;
-    }
-    .effort-date {
-      font-size: 0.9rem;
-      color: #777;
-    }
-    /* Button spacing for filters */
-    .filter-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-  </style>
-</head>
-<body class="bg-light">
+{% extends "base.html" %}
 
-<div class="container my-4">
-  <h1 class="mb-4">Best Efforts for Athlete {{ athlete_id }}</h1>
+{% block title %}Best Efforts - Athlete {{ athlete_id }}{% endblock %}
 
-  <!-- Distance Filter Bar -->
-<div class="filter-buttons">
-  <button class="btn btn-outline-primary" onclick="filterDistance('all')">All Runs</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('400m')">400m</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('1/2 Mile')">1/2 Mile</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('1km')">1km</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('1 Mile')">1 Mile</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('2 Miles')">2 Miles</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('5km')">5km</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('10km')">10km</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('15km')">15km</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('10 Miles')">10 Miles</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('20km')">20km</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('Half-Marathon')">Half-Marathon</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('30km')">30km</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('Marathon')">Marathon</button>
-  <button class="btn btn-outline-primary" onclick="filterDistance('50km')">50km</button>
+{% block content %}
+<div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+  <h1 class="text-2xl font-bold text-gray-900">Best Efforts for Athlete {{ athlete_id }}</h1>
+  <div class="mt-4 md:mt-0">
+    <a href="/dashboard/{{ athlete_id }}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+      Dashboard
+    </a>
+  </div>
 </div>
 
-<!-- Time Filter Bar -->
-<div class="filter-buttons">
-  <button class="btn btn-outline-secondary" onclick="filterYear('all')">All Time</button>
-  <script>
-      for (let year = 2025; year >= 2019; year--) {
-          document.write(`<button class='btn btn-outline-secondary' onclick="filterYear('${year}')">${year}</button>`);
-      }
-  </script>
+<!-- Filter Controls -->
+<div class="bg-white shadow rounded-lg p-4 mb-6">
+  <div class="mb-4">
+    <h3 class="text-lg font-medium text-gray-900 mb-2">Filter by Distance</h3>
+    <div class="flex flex-wrap gap-2" x-data="{ activeDistance: 'all' }">
+      <button @click="activeDistance = 'all'; filterDistance('all')" :class="{'bg-strava-orange text-white': activeDistance === 'all', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== 'all'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        All Distances
+      </button>
+      <button @click="activeDistance = '400m'; filterDistance('400m')" :class="{'bg-strava-orange text-white': activeDistance === '400m', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '400m'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        400m
+      </button>
+      <button @click="activeDistance = '1/2 Mile'; filterDistance('1/2 Mile')" :class="{'bg-strava-orange text-white': activeDistance === '1/2 Mile', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '1/2 Mile'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        1/2 Mile
+      </button>
+      <button @click="activeDistance = '1km'; filterDistance('1km')" :class="{'bg-strava-orange text-white': activeDistance === '1km', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '1km'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        1km
+      </button>
+      <button @click="activeDistance = '1 Mile'; filterDistance('1 Mile')" :class="{'bg-strava-orange text-white': activeDistance === '1 Mile', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '1 Mile'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        1 Mile
+      </button>
+      <button @click="activeDistance = '2 Miles'; filterDistance('2 mile')" :class="{'bg-strava-orange text-white': activeDistance === '2 Miles', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '2 Miles'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        2 Miles
+      </button>
+      <button @click="activeDistance = '5km'; filterDistance('5km')" :class="{'bg-strava-orange text-white': activeDistance === '5km', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '5km'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        5km
+      </button>
+      <button @click="activeDistance = '10km'; filterDistance('10km')" :class="{'bg-strava-orange text-white': activeDistance === '10km', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '10km'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        10km
+      </button>
+      <button @click="activeDistance = '15km'; filterDistance('15km')" :class="{'bg-strava-orange text-white': activeDistance === '15km', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '15km'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        15km
+      </button>
+      <button @click="activeDistance = '10 Miles'; filterDistance('10 mile')" :class="{'bg-strava-orange text-white': activeDistance === '10 Miles', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '10 Miles'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        10 Miles
+      </button>
+      <button @click="activeDistance = '20km'; filterDistance('20km')" :class="{'bg-strava-orange text-white': activeDistance === '20km', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '20km'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        20km
+      </button>
+      <button @click="activeDistance = 'Half-Marathon'; filterDistance('Half-Marathon')" :class="{'bg-strava-orange text-white': activeDistance === 'Half-Marathon', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== 'Half-Marathon'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        Half-Marathon
+      </button>
+      <button @click="activeDistance = '30km'; filterDistance('30km')" :class="{'bg-strava-orange text-white': activeDistance === '30km', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '30km'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        30km
+      </button>
+      <button @click="activeDistance = 'Marathon'; filterDistance('Marathon')" :class="{'bg-strava-orange text-white': activeDistance === 'Marathon', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== 'Marathon'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        Marathon
+      </button>
+      <button @click="activeDistance = '50km'; filterDistance('50km')" :class="{'bg-strava-orange text-white': activeDistance === '50km', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeDistance !== '50km'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        50km
+      </button>
+    </div>
+  </div>
+  
+  <div>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">Filter by Year</h3>
+    <div class="flex flex-wrap gap-2" x-data="{ activeYear: 'all' }">
+      <button @click="activeYear = 'all'; filterYear('all')" :class="{'bg-blue-600 text-white': activeYear === 'all', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeYear !== 'all'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        All Time
+      </button>
+      {% for year in range(2025, 2018, -1) %}
+      <button @click="activeYear = '{{ year }}'; filterYear('{{ year }}')" :class="{'bg-blue-600 text-white': activeYear === '{{ year }}', 'bg-gray-100 text-gray-800 hover:bg-gray-200': activeYear !== '{{ year }}'}" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
+        {{ year }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
 </div>
 
-  <!-- Container for best efforts -->
-  <div id="efforts-container" class="row">
-    {% for item in all_efforts %}
-      <div
-        class="col-12 col-md-6 effort-card"
-        data-distance="{{ item.distance_label }}"
-        data-year="{{ item.year }}"
-      >
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title effort-time">
-              {{ item.elapsed_time|format_time }}
-            </h5>
-            <p class="effort-activity-name">
-              {{ item.activity.name }}
-            </p>
-            <p class="effort-date">
-              {{ item.activity.start_date.strftime('%Y-%m-%d') if item.activity.start_date else '' }}
-            </p>
-            <p class="card-text">
-              Distance: <strong>{{ item.distance_label }}</strong>
-              <br>
-              Activity ID: {{ item.activity.id }}
-            </p>
-          </div>
+<!-- Best Efforts Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="efforts-container">
+  {% for item in all_efforts %}
+  <div class="bg-white shadow rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200 effort-card" data-distance="{{ item.distance_label }}" data-year="{{ item.year }}">
+    <div class="px-4 py-5 sm:p-6">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 bg-strava-orange-light rounded-md p-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div class="ml-5">
+          <h4 class="text-lg font-semibold text-gray-900">{{ item.elapsed_time|format_time }}</h4>
+          <p class="text-sm font-medium text-strava-orange">{{ item.distance_label }}</p>
         </div>
       </div>
-    {% endfor %}
+      <div class="mt-4">
+        <p class="text-sm text-gray-700">{{ item.activity.name }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ item.activity.start_date.strftime('%Y-%m-%d') if item.activity.start_date else '' }}</p>
+        <div class="mt-4 text-right">
+          <a href="/activity/{{ item.activity.id }}?athlete_id={{ athlete_id }}" class="text-sm font-medium text-strava-orange hover:text-strava-orange-dark">
+            View Activity
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <!-- Link back or other navigation -->
-  <div class="mt-3">
-    <a href="{{ url_for('render_index') }}" class="btn btn-secondary">Back to Home</a>
-  </div>
+  {% endfor %}
 </div>
 
-<!-- JavaScript for client-side filtering -->
+<!-- Empty State -->
+{% if not all_efforts %}
+<div class="bg-white shadow rounded-lg p-8 text-center">
+  <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+  </svg>
+  <h3 class="mt-2 text-sm font-medium text-gray-900">No best efforts found</h3>
+  <p class="mt-1 text-sm text-gray-500">Looks like you don't have any recorded best efforts yet.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
 <script>
   let currentDistanceFilter = 'all';
   let currentYearFilter = 'all';
@@ -122,16 +143,12 @@
   function applyFilters() {
     const items = document.querySelectorAll('.effort-card');
     items.forEach(item => {
-      const itemDistance = item.dataset.distance;  // e.g. "5km"
-      const itemYear = item.dataset.year;          // e.g. "2025"
+      const itemDistance = item.dataset.distance;
+      const itemYear = item.dataset.year;
 
-      // Check if this item matches the current distance filter
       const distanceMatch = (currentDistanceFilter === 'all' || itemDistance === currentDistanceFilter);
-
-      // Check if this item matches the current year filter
       const yearMatch = (currentYearFilter === 'all' || itemYear === currentYearFilter);
 
-      // Show/hide based on both filters
       if (distanceMatch && yearMatch) {
         item.style.display = '';
       } else {
@@ -140,9 +157,4 @@
     });
   }
 </script>
-
-<!-- Optionally, Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-</html>
+{% endblock %}
