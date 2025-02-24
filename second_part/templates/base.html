@@ -1,60 +1,241 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>{% block title %}Strava Analysis{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Running Companion{% endblock %}</title>
+    
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'strava-orange': '#fc5200',
+                        'strava-orange-light': '#ff7d4d',
+                        'strava-orange-dark': '#e34c00',
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        /* Strava-inspired gradient */
+        .bg-strava-gradient {
+            background: linear-gradient(to right, #fc5200, #ff7d4d);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #d1d1d1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #fc5200;
+        }
+    </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-    <div class="container mt-5">
-        <!-- Navigation Menu -->
-        <nav class="nav nav-pills mb-4">
-            <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Home</a>
-            <a class="nav-link {% if request.path == '/about' %}active{% endif %}" href="/about">About</a>
-            <a class="nav-link {% if request.path == '/view_athletes' %}active{% endif %}" href="/view_athletes">All Athletes</a>
-            
-            <!-- Data Processing Controls -->
-            <div class="ms-auto btn-group">
-                <button onclick="fetchStravaData()" class="btn btn-primary btn-sm">
-                    <i class="bi bi-cloud-download"></i> Fetch Data
-                </button>
-                <button onclick="processStoredData()" class="btn btn-success btn-sm">
-                    <i class="bi bi-gear"></i> Process Data
-                </button>
-                <button onclick="resetDatabase()" class="btn btn-danger btn-sm">
-                    <i class="bi bi-trash"></i> Reset DB
-                </button>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+    <div x-data="{ mobileMenuOpen: false, userDropdownOpen: false }">
+        <!-- Header/Navigation -->
+        <header class="bg-white shadow-sm sticky top-0 z-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <!-- Logo and Main Nav -->
+                    <div class="flex">
+                        <a href="/" class="flex-shrink-0 flex items-center">
+                            <span class="text-strava-orange font-bold text-xl">Running Companion</span>
+                        </a>
+                        <!-- Desktop Navigation -->
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-4 sm:items-center">
+                            <a href="/" class="{% if request.path == '/' %}text-strava-orange border-strava-orange{% else %}text-gray-500 hover:text-strava-orange{% endif %} px-3 py-2 text-sm font-medium border-b-2 {% if request.path == '/' %}border-current{% else %}border-transparent{% endif %}">Home</a>
+                            <a href="/about" class="{% if request.path == '/about' %}text-strava-orange border-strava-orange{% else %}text-gray-500 hover:text-strava-orange{% endif %} px-3 py-2 text-sm font-medium border-b-2 {% if request.path == '/about' %}border-current{% else %}border-transparent{% endif %}">About</a>
+                            <a href="/view_athletes" class="{% if request.path == '/view_athletes' %}text-strava-orange border-strava-orange{% else %}text-gray-500 hover:text-strava-orange{% endif %} px-3 py-2 text-sm font-medium border-b-2 {% if request.path == '/view_athletes' %}border-current{% else %}border-transparent{% endif %}">Athletes</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Side Actions -->
+                    <div class="flex items-center">
+                        <!-- Data Controls (Desktop) -->
+                        <div class="hidden sm:flex space-x-2 mr-4">
+                            <button @click="fetchStravaData()" class="bg-strava-orange hover:bg-strava-orange-dark text-white px-3 py-1 rounded text-sm flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Fetch
+                            </button>
+                            <button @click="processStoredData()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Process
+                            </button>
+                        </div>
+                        
+                        <!-- Login/User Section -->
+                        <div class="ml-3 relative">
+                            {% if session.get('token') %}
+                                <div>
+                                    <button @click="userDropdownOpen = !userDropdownOpen" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+                                        <div class="relative h-8 w-8 rounded-full bg-strava-orange-light flex items-center justify-center text-white">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                </div>
+                                <div x-show="userDropdownOpen" 
+                                     @click.away="userDropdownOpen = false"
+                                     x-transition:enter="transition ease-out duration-100"
+                                     x-transition:enter-start="transform opacity-0 scale-95"
+                                     x-transition:enter-end="transform opacity-100 scale-100"
+                                     x-transition:leave="transition ease-in duration-75"
+                                     x-transition:leave-start="transform opacity-100 scale-100"
+                                     x-transition:leave-end="transform opacity-0 scale-95"
+                                     class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                     role="menu"
+                                     x-cloak>
+                                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Logout</a>
+                                </div>
+                            {% else %}
+                                <a href="/login" class="bg-strava-orange hover:bg-strava-orange-dark text-white px-4 py-2 rounded-md text-sm font-medium flex items-center">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="mr-2">
+                                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 3 13.828h4.17" />
+                                    </svg>
+                                    Connect
+                                </a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Mobile menu button -->
+                        <div class="flex items-center sm:hidden ml-4">
+                            <button @click="mobileMenuOpen = !mobileMenuOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-strava-orange hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-strava-orange">
+                                <svg class="h-6 w-6" :class="{'hidden': mobileMenuOpen, 'block': !mobileMenuOpen}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                                <svg class="h-6 w-6" :class="{'block': mobileMenuOpen, 'hidden': !mobileMenuOpen}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <!-- Login Status -->
-            {% if session.get('token') %}
-                <span class="nav-link text-success">
-                    <i class="bi bi-person-check"></i> Connected
-                </span>
-                <a href="/logout" class="nav-link">Logout</a>
-            {% else %}
-                <a href="/login" class="nav-link">
-                    <i class="bi bi-strava"></i> Connect
-                </a>
-            {% endif %}
-        </nav>
+            
+            <!-- Mobile menu -->
+            <div x-show="mobileMenuOpen" class="sm:hidden bg-white border-t border-gray-200" x-cloak>
+                <div class="pt-2 pb-3 space-y-1">
+                    <a href="/" class="{% if request.path == '/' %}bg-strava-orange-light text-white{% else %}text-gray-500 hover:bg-gray-100 hover:text-strava-orange{% endif %} block px-3 py-2 rounded-md text-base font-medium">Home</a>
+                    <a href="/about" class="{% if request.path == '/about' %}bg-strava-orange-light text-white{% else %}text-gray-500 hover:bg-gray-100 hover:text-strava-orange{% endif %} block px-3 py-2 rounded-md text-base font-medium">About</a>
+                    <a href="/view_athletes" class="{% if request.path == '/view_athletes' %}bg-strava-orange-light text-white{% else %}text-gray-500 hover:bg-gray-100 hover:text-strava-orange{% endif %} block px-3 py-2 rounded-md text-base font-medium">Athletes</a>
+                </div>
+                
+                <!-- Mobile Data Controls -->
+                <div class="pt-4 pb-3 border-t border-gray-200">
+                    <div class="flex space-x-2 px-4">
+                        <button @click="fetchStravaData()" class="bg-strava-orange hover:bg-strava-orange-dark text-white px-3 py-1 rounded text-sm flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Fetch Data
+                        </button>
+                        <button @click="processStoredData()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Process Data
+                        </button>
+                    </div>
+                    <div class="mt-3 px-4">
+                        <button @click="resetDatabase()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Reset Database
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
 
         <!-- Status Messages -->
-        <div id="status-messages"></div>
+        <div id="status-messages" class="container mx-auto px-4 py-2"></div>
 
         <!-- Main Content -->
-        {% block content %}{% endblock %}
+        <main class="flex-grow">
+            <div class="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 py-6">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row justify-between items-center">
+                    <div class="mb-4 sm:mb-0">
+                        <p class="text-gray-500 text-sm">&copy; 2023 Running Companion. All rights reserved.</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="/about" class="text-gray-500 hover:text-strava-orange text-sm">About</a>
+                        <a href="#" class="text-gray-500 hover:text-strava-orange text-sm">Privacy</a>
+                        <a href="#" class="text-gray-500 hover:text-strava-orange text-sm">Terms</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
-    <!-- Common JavaScript -->
+    <!-- Alpine.js Data and Functions -->
     <script>
         function fetchStravaData() {
             fetch('/fetch_strava_data')
                 .then(response => response.text())
                 .then(result => {
                     document.getElementById('status-messages').innerHTML = 
-                        `<div class="alert alert-info">${result}</div>`;
+                        `<div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">${result}</p>
+                                </div>
+                            </div>
+                        </div>`;
                 });
         }
 
@@ -63,7 +244,18 @@
                 .then(response => response.text())
                 .then(result => {
                     document.getElementById('status-messages').innerHTML = 
-                        `<div class="alert alert-info">${result}</div>`;
+                        `<div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">${result}</p>
+                                </div>
+                            </div>
+                        </div>`;
                 });
         }
 
@@ -73,11 +265,23 @@
                     .then(response => response.text())
                     .then(result => {
                         document.getElementById('status-messages').innerHTML = 
-                            `<div class="alert alert-warning">${result}</div>`;
+                            `<div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-red-700">${result}</p>
+                                    </div>
+                                </div>
+                            </div>`;
                     });
             }
         }
     </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
