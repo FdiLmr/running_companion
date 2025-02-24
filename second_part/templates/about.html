@@ -1,28 +1,130 @@
 {% extends "base.html" %}
 
-{% block title %}About - Strava Analysis{% endblock %}
+{% block title %}About - Running Companion{% endblock %}
 
 {% block content %}
-<h2>About Strava Analysis</h2>
-
-<div class="card mt-4">
-    <div class="card-body">
-        <h4>Understanding the Analysis</h4>
-        <p>This tool analyzes your Strava data to help understand your training patterns and effectiveness. 
-        It collects data about:</p>
-        <ul>
-            <li>Running activities and patterns</li>
-            <li>Training load and intensity</li>
-            <li>Performance metrics and trends</li>
-        </ul>
+<div class="bg-white">
+  <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
+    <div class="lg:text-center mb-12">
+      <h2 class="text-base text-strava-orange font-semibold tracking-wide uppercase">About Us</h2>
+      <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+        Understand Your Training With Data
+      </p>
+      <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+        Running Companion helps you analyze your training patterns and get insights from your data
+      </p>
     </div>
-</div>
 
-<div class="card mt-4">
-    <div class="card-body">
-        <h4>Data Privacy</h4>
-        <p>Your data is handled securely and privately. Only your activity data is stored, with no personal 
-        identifying information except your Strava athlete ID.</p>
+    <div class="mt-10">
+      <div class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Understanding the Analysis</h3>
+            <div class="mt-5">
+              <p class="text-base text-gray-500">
+                This tool analyzes your Strava data to help understand your training patterns and effectiveness. 
+                It collects data about:
+              </p>
+              <ul class="mt-3 list-disc list-inside text-base text-gray-500 space-y-1">
+                <li>Running activities and patterns</li>
+                <li>Training load and intensity</li>
+                <li>Performance metrics and trends</li>
+                <li>Heart rate zones and distribution</li>
+                <li>Elevation profiles and performance factors</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Data Privacy</h3>
+            <div class="mt-5">
+              <p class="text-base text-gray-500">
+                Your data is handled securely and privately. Only your activity data is stored, with no personal 
+                identifying information except your Strava athlete ID.
+              </p>
+              <p class="mt-3 text-base text-gray-500">
+                We use industry-standard security practices to ensure your data remains protected and private.
+              </p>
+              <div class="mt-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span class="ml-2 text-sm font-medium text-gray-700">Your data is never shared with third parties</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+    
+    <div class="mt-12 bg-gray-50 rounded-lg overflow-hidden shadow">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">How It Works</h3>
+        <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-strava-orange rounded-md p-3">
+                  <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div class="ml-5">
+                  <h4 class="text-lg leading-6 font-medium text-gray-900">1. Connect</h4>
+                  <p class="mt-2 text-sm text-gray-500">
+                    Connect your Strava account to give us access to your activities data.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-strava-orange rounded-md p-3">
+                  <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                  </svg>
+                </div>
+                <div class="ml-5">
+                  <h4 class="text-lg leading-6 font-medium text-gray-900">2. Analyze</h4>
+                  <p class="mt-2 text-sm text-gray-500">
+                    We process your running data to extract meaningful insights.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-strava-orange rounded-md p-3">
+                  <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div class="ml-5">
+                  <h4 class="text-lg leading-6 font-medium text-gray-900">3. Visualize</h4>
+                  <p class="mt-2 text-sm text-gray-500">
+                    View your data through clean, intuitive dashboards and charts.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-12 text-center">
+      <a href="/" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+        Return to Home
+      </a>
+    </div>
+  </div>
 </div>
 {% endblock %}
