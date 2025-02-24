@@ -1,98 +1,189 @@
 {% extends "base.html" %}
-{% block title %}Activity Detail - Activity {{ activity.activity_id }}{% endblock %}
+{% block title %}Activity Detail - {{ activity.activity_id }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>Activity Details</h2>
-  <h4>Activity ID: {{ activity.activity_id }}</h4>
-  <p><strong>Athlete ID:</strong> {{ activity.athlete_id }}</p>
-  
-  <!-- Display key stats in a nicely formatted table -->
-  <table class="table table-bordered">
-    <tr>
-      <th>Elapsed Time</th>
-      <td>
-        {{ activity.elapsed_time }} seconds 
-        ({{ (activity.elapsed_time / 60)|round(1) }} minutes)
-      </td>
-    </tr>
-    <tr>
-      <th>Distance</th>
-      <td>
-        {{ activity.distance }} meters 
-        ({{ (activity.distance / 1000)|round(2) }} km)
-      </td>
-    </tr>
-    <tr>
-      <th>Average Heart Rate</th>
-      <td>{{ activity.mean_hr }} bpm</td>
-    </tr>
-    <tr>
-      <th>HR Standard Deviation</th>
-      <td>{{ activity.stdev_hr }}</td>
-    </tr>
-    <tr>
-      <th>HR Peak Frequency</th>
-      <td>{{ activity.freq_hr }}</td>
-    </tr>
-    <tr>
-      <th>Time in Zone 1</th>
-      <td>{{ activity.time_in_z1 }}</td>
-    </tr>
-    <tr>
-      <th>Time in Zone 2</th>
-      <td>{{ activity.time_in_z2 }}</td>
-    </tr>
-    <tr>
-      <th>Time in Zone 3</th>
-      <td>{{ activity.time_in_z3 }}</td>
-    </tr>
-    <tr>
-      <th>Time in Zone 4</th>
-      <td>{{ activity.time_in_z4 }}</td>
-    </tr>
-    <tr>
-      <th>Time in Zone 5</th>
-      <td>{{ activity.time_in_z5 }}</td>
-    </tr>
-    <tr>
-      <th>Elevation Gain</th>
-      <td>{{ activity.elevation }} meters</td>
-    </tr>
-    <tr>
-      <th>Elevation Std. Dev.</th>
-      <td>{{ activity.stdev_elevation }}</td>
-    </tr>
-    <tr>
-      <th>Elevation Peak Frequency</th>
-      <td>{{ activity.freq_elevation }}</td>
-    </tr>
-    <tr>
-      <th>Pace</th>
-      <td>{{ activity.pace }}</td>
-    </tr>
-    <tr>
-      <th>Pace Std. Dev.</th>
-      <td>{{ activity.stdev_pace }}</td>
-    </tr>
-    <tr>
-      <th>Pace Peak Frequency</th>
-      <td>{{ activity.freq_pace }}</td>
-    </tr>
-    <tr>
-      <th>Cadence</th>
-      <td>{{ activity.cadence }}</td>
-    </tr>
-    <tr>
-      <th>Athlete Count</th>
-      <td>{{ activity.athlete_count }}</td>
-    </tr>
-  </table>
+<div class="mb-6">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+    <h1 class="text-2xl font-bold text-gray-900">{{ activity.name|default('Activity Details') }}</h1>
+    <div class="mt-4 md:mt-0">
+      <a href="/view_activities/{{ athlete_id }}" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Activities
+      </a>
+    </div>
+  </div>
+</div>
 
-  <!-- A Plotly pie chart to show heart rate zone distribution -->
-  <div id="hr-zone-chart" style="width:100%;height:400px;"></div>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Left Column: Activity Summary -->
+  <div class="lg:col-span-1">
+    <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200 mb-6">
+      <div class="bg-gradient-to-r from-strava-orange to-strava-orange-light px-4 py-5 border-b border-gray-200 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-white">
+          Activity Summary
+        </h3>
+        <p class="mt-1 text-sm text-white opacity-80">
+          ID: {{ activity.activity_id }}
+        </p>
+      </div>
+      <div class="px-4 py-5 sm:p-6">
+        <div class="grid grid-cols-1 gap-4">
+          <!-- Distance -->
+          <div class="bg-gray-50 rounded-lg p-4 flex items-center">
+            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-strava-orange bg-opacity-20 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-strava-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <div class="text-sm font-medium text-gray-500">Distance</div>
+              <div class="text-lg font-semibold text-gray-900">{{ (activity.distance / 1000)|round(2) }} km</div>
+            </div>
+          </div>
+          
+          <!-- Time -->
+          <div class="bg-gray-50 rounded-lg p-4 flex items-center">
+            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <div class="text-sm font-medium text-gray-500">Moving Time</div>
+              <div class="text-lg font-semibold text-gray-900">{{ (activity.elapsed_time / 60)|round(1) }} minutes</div>
+            </div>
+          </div>
+          
+          <!-- Pace -->
+          <div class="bg-gray-50 rounded-lg p-4 flex items-center">
+            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <div class="text-sm font-medium text-gray-500">Average Pace</div>
+              <div class="text-lg font-semibold text-gray-900">{{ activity.pace|default('--') }}</div>
+            </div>
+          </div>
+          
+          <!-- Heart Rate -->
+          <div class="bg-gray-50 rounded-lg p-4 flex items-center">
+            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <div class="text-sm font-medium text-gray-500">Average Heart Rate</div>
+              <div class="text-lg font-semibold text-gray-900">{{ activity.mean_hr|default('--') }} bpm</div>
+            </div>
+          </div>
+          
+          <!-- Elevation -->
+          <div class="bg-gray-50 rounded-lg p-4 flex items-center">
+            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <div class="text-sm font-medium text-gray-500">Elevation Gain</div>
+              <div class="text-lg font-semibold text-gray-900">{{ activity.elevation|default('--') }} m</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Right Columns: Charts & Additional Data -->
+  <div class="lg:col-span-2">
+    <!-- HR Zone Distribution Chart -->
+    <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200 mb-6">
+      <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Heart Rate Zone Distribution
+        </h3>
+      </div>
+      <div class="px-4 py-5 sm:p-6">
+        <canvas id="hr-zone-chart" height="250"></canvas>
+      </div>
+    </div>
+    
+    <!-- Detailed Metrics -->
+    <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+      <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Detailed Metrics
+        </h3>
+      </div>
+      <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+        <dl class="sm:divide-y sm:divide-gray-200">
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">HR Standard Deviation</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ activity.stdev_hr|default('--') }}</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">HR Peak Frequency</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ activity.freq_hr|default('--') }}</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Pace Std. Dev.</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ activity.stdev_pace|default('--') }}</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Pace Peak Frequency</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ activity.freq_pace|default('--') }}</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Elevation Std. Dev.</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ activity.stdev_elevation|default('--') }}</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Elevation Peak Freq.</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ activity.freq_elevation|default('--') }}</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Cadence</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ activity.cadence|default('--') }}</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Athlete Count</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ activity.athlete_count|default('--') }}</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Zone 1 Time</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ (activity.time_in_z1 * 100)|round(1) }}%</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Zone 2 Time</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ (activity.time_in_z2 * 100)|round(1) }}%</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Zone 3 Time</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ (activity.time_in_z3 * 100)|round(1) }}%</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Zone 4 Time</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ (activity.time_in_z4 * 100)|round(1) }}%</dd>
+          </div>
+          <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Zone 5 Time</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ (activity.time_in_z5 * 100)|round(1) }}%</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
     // Prepare HR zone values from the activity record
     var hrZoneValues = [
       {{ activity.time_in_z1 }},
@@ -102,24 +193,52 @@
       {{ activity.time_in_z5 }}
     ];
     var hrZoneLabels = ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5'];
-
-    var data = [{
-      values: hrZoneValues,
-      labels: hrZoneLabels,
-      type: 'pie'
-    }];
-
-    var layout = {
-      title: 'Heart Rate Zone Distribution'
-    };
-
-    Plotly.newPlot('hr-zone-chart', data, layout);
-  </script>
-
-  <div class="mt-3">
-    <a href="/view_activities/{{ athlete_id }}" class="btn btn-secondary">
-      <i class="bi bi-arrow-left"></i> Back to Activities
-    </a>
-  </div>
-</div>
+    
+    // Convert to percentages
+    var hrZonePercentages = hrZoneValues.map(function(value) {
+      return (value * 100).toFixed(1);
+    });
+    
+    // Create Chart.js doughnut chart
+    var ctx = document.getElementById('hr-zone-chart').getContext('2d');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: hrZoneLabels,
+        datasets: [{
+          data: hrZonePercentages,
+          backgroundColor: [
+            '#BAF3DB', // Light green - Z1
+            '#60C6A8', // Green - Z2
+            '#FFDD57', // Yellow - Z3
+            '#FF9F40', // Orange - Z4
+            '#FF6B6B'  // Red - Z5
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              boxWidth: 15,
+              padding: 15
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.label}: ${context.raw}%`;
+              }
+            }
+          }
+        },
+        cutout: '70%'
+      }
+    });
+  });
+</script>
 {% endblock %}
