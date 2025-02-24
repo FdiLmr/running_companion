@@ -1,25 +1,132 @@
 {% extends "base.html" %}
 
-{% block title %}Strava Analysis - Home{% endblock %}
+{% block title %}Running Companion - Home{% endblock %}
 
 {% block content %}
-<div class="card mt-4">
-    <div class="card-body">
-        <h4>Welcome to Strava Analysis</h4>
-        <p>This tool helps you analyze your running activities and training patterns using your Strava data.</p>
-
-        <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle"></i>
-            Note: You need at least 20 activities and 3 months of data for meaningful analysis.
+<!-- Hero Section -->
+<div class="relative overflow-hidden">
+  <div class="relative max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div class="lg:grid lg:grid-cols-12 lg:gap-8">
+      <div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+        <h1>
+          <span class="block text-sm font-semibold uppercase tracking-wide text-gray-500 sm:text-base lg:text-sm xl:text-base">
+            Training Analytics
+          </span>
+          <span class="mt-1 block text-4xl tracking-tight font-extrabold sm:text-5xl xl:text-6xl">
+            <span class="block text-gray-900">Transform Your</span>
+            <span class="block text-strava-orange">Running Data</span>
+          </span>
+        </h1>
+        <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
+          Get insights from your running activities and training patterns. Visualize your performance, track your progress, and optimize your training with our advanced analytics.
+        </p>
+        <div class="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
+          {% if not session.get('token') %}
+          <a href="/login" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange md:py-4 md:text-lg md:px-10">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="mr-2">
+              <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 3 13.828h4.17" />
+            </svg>
+            Connect with Strava
+          </a>
+          {% else %}
+          <a href="/view_athletes" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-strava-orange hover:bg-strava-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-strava-orange md:py-4 md:text-lg md:px-10">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+              <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+            </svg>
+            View My Data
+          </a>
+          {% endif %}
+          
+          <div class="mt-3 sm:mt-4 text-sm text-gray-500">
+            <i class="text-strava-orange-light">Note:</i> You need at least 20 activities and 3 months of data for meaningful analysis.
+          </div>
         </div>
-
-        {% if not session.get('token') %}
-        <div class="mt-4">
-            <a href="/login" class="btn btn-primary btn-lg">
-                <i class="bi bi-strava"></i> Connect with Strava
-            </a>
+      </div>
+      <div class="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
+        <div class="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
+          <div class="relative block w-full bg-white rounded-lg overflow-hidden">
+            <img class="w-full" src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80" alt="Runner on track">
+            <div class="absolute inset-0 bg-strava-orange mix-blend-multiply opacity-20"></div>
+          </div>
         </div>
-        {% endif %}
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- Features Section -->
+<div class="bg-white">
+  <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
+    <div class="lg:text-center mb-12">
+      <h2 class="text-base text-strava-orange font-semibold tracking-wide uppercase">Features</h2>
+      <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+        Everything you need to optimize your training
+      </p>
+      <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+        Unlock the power of your running data with these powerful features
+      </p>
+    </div>
+
+    <div class="mt-10">
+      <div class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-strava-orange text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Comprehensive Analytics</h3>
+            <p class="mt-2 text-base text-gray-500">
+              Get detailed insights about your running patterns, heart rate zones, and training load over time.
+            </p>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-strava-orange text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Performance Tracking</h3>
+            <p class="mt-2 text-base text-gray-500">
+              Track your performance metrics and see your progress over weeks and months with beautiful visualizations.
+            </p>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-strava-orange text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Training Recommendations</h3>
+            <p class="mt-2 text-base text-gray-500">
+              Get personalized training recommendations based on your historical data and goals.
+            </p>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-strava-orange text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Activity History</h3>
+            <p class="mt-2 text-base text-gray-500">
+              Browse your complete activity history with advanced sorting and filtering capabilities.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
