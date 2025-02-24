@@ -1,4 +1,4 @@
-from flask import Flask, session, request, render_template, redirect, send_file, jsonify
+from flask import Flask, session, request, render_template, redirect, send_file, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from environs import Env
@@ -26,6 +26,7 @@ from visualisations import athletevsbest, athletevsbestimprovement
 import random
 import json
 from train_model import train_model
+import pandas as pd
 
 # Configure logging first
 logging.basicConfig(level=logging.DEBUG)
@@ -514,20 +515,176 @@ def view_best_efforts(athlete_id):
 @app.route('/api/dashboard-data/<athlete_id>')
 def dashboard_data(athlete_id):
     try:
-        # Example: Query the Activity model for runs (adjust field names as needed)
-        activities = db.session.query(Activity).filter_by(athlete_id=athlete_id, type='Run').all()
-        data = []
-        for a in activities:
-            data.append({
-                'id': a.id,
-                'date': a.start_date.strftime('%Y-%m-%d') if a.start_date else '',
-                'distance': round(a.distance/1000, 2) if a.distance else 0,  # in km
-                'avg_hr': a.average_heartrate  # may be None
-            })
-        return jsonify(data)
+        # Create database connection
+        conn = get_db_connection()
+        
+        # Get weekly distance (last 4 weeks)
+        weekly_query = """
+            SELECT 
+                CONCAT(YEAR(start_date), '-', WEEK(start_date)) as week_id,
+                YEAR(start_date) as year,
+                WEEK(start_date) as week,
+                SUM(distance) / 1000 as distance_km
+            FROM activities 
+            WHERE athlete_id = %s AND type = 'Run'
+            GROUP BY week_id, year, week
+            ORDER BY year DESC, week DESC
+            LIMIT 4
+        """
+        weekly_df = pd.read_sql_query(weekly_query, conn, params=(athlete_id,))
+        
+        # Get this week's running distance 
+        current_week_query = """
+            SELECT SUM(distance) / 1000 as distance_km
+            FROM activities
+            WHERE athlete_id = %s AND type = 'Run'
+            AND WEEK(start_date) = WEEK(CURRENT_DATE)
+            AND YEAR(start_date) = YEAR(CURRENT_DATE)
+        """
+        weekly_distance_df = pd.read_sql_query(current_week_query, conn, params=(athlete_id,))
+        weekly_distance = weekly_distance_df.iloc[0]['distance_km'] if not weekly_distance_df.empty and not pd.isna(weekly_distance_df.iloc[0]['distance_km']) else 0
+        
+        # Get this month's running distance
+        current_month_query = """
+            SELECT SUM(distance) / 1000 as distance_km
+            FROM activities
+            WHERE athlete_id = %s AND type = 'Run'
+            AND MONTH(start_date) = MONTH(CURRENT_DATE)
+            AND YEAR(start_date) = YEAR(CURRENT_DATE)
+        """
+        monthly_distance_df = pd.read_sql_query(current_month_query, conn, params=(athlete_id,))
+        monthly_distance = monthly_distance_df.iloc[0]['distance_km'] if not monthly_distance_df.empty and not pd.isna(monthly_distance_df.iloc[0]['distance_km']) else 0
+        
+        # Get average pace
+        pace_query = """
+            SELECT AVG(moving_time) / (AVG(distance) / 1000) as avg_pace_seconds_per_km
+            FROM activities
+            WHERE athlete_id = %s AND type = 'Run'
+            AND start_date >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
+        """
+        pace_df = pd.read_sql_query(pace_query, conn, params=(athlete_id,))
+        avg_pace_seconds = pace_df.iloc[0]['avg_pace_seconds_per_km'] if not pace_df.empty and not pd.isna(pace_df.iloc[0]['avg_pace_seconds_per_km']) else 0
+        
+        # Convert seconds to min:sec format
+        avg_pace_minutes = int(avg_pace_seconds // 60)
+        avg_pace_seconds = int(avg_pace_seconds % 60)
+        avg_pace = f"{avg_pace_minutes}:{avg_pace_seconds:02d}"
+        
+        # Heart rate zone distribution
+        hr_zones_query = """
+            SELECT 
+                SUM(CASE WHEN average_heartrate < 124 THEN 1 ELSE 0 END) as zone1,
+                SUM(CASE WHEN average_heartrate >= 124 AND average_heartrate < 143 THEN 1 ELSE 0 END) as zone2,
+                SUM(CASE WHEN average_heartrate >= 143 AND average_heartrate < 162 THEN 1 ELSE 0 END) as zone3,
+                SUM(CASE WHEN average_heartrate >= 162 AND average_heartrate < 181 THEN 1 ELSE 0 END) as zone4,
+                SUM(CASE WHEN average_heartrate >= 181 THEN 1 ELSE 0 END) as zone5,
+                COUNT(*) as total
+            FROM activities
+            WHERE athlete_id = %s AND type = 'Run' AND average_heartrate > 0
+            AND start_date >= DATE_SUB(CURRENT_DATE, INTERVAL 60 DAY)
+        """
+        hr_zones_df = pd.read_sql_query(hr_zones_query, conn, params=(athlete_id,))
+        
+        if not hr_zones_df.empty and hr_zones_df.iloc[0]['total'] > 0:
+            total = hr_zones_df.iloc[0]['total']
+            hr_zones = [
+                round(hr_zones_df.iloc[0]['zone1'] / total * 100),
+                round(hr_zones_df.iloc[0]['zone2'] / total * 100),
+                round(hr_zones_df.iloc[0]['zone3'] / total * 100),
+                round(hr_zones_df.iloc[0]['zone4'] / total * 100),
+                round(hr_zones_df.iloc[0]['zone5'] / total * 100)
+            ]
+        else:
+            hr_zones = [20, 40, 20, 15, 5]  # Default distribution
+        
+        # Get recent activities
+        recent_activities_query = """
+            SELECT 
+                id, name, type, start_date as date,
+                ROUND(distance / 1000, 2) as distance,
+                CONCAT(FLOOR(moving_time/3600), ':', LPAD(FLOOR((moving_time%%3600)/60), 2, '0')) as time,
+                CONCAT(FLOOR(ROUND(1000 / (moving_time/distance), 2) / 16.67), ':', 
+                    LPAD(FLOOR(ROUND(1000 / (moving_time/distance), 2) %% 16.67 * 60 / 16.67), 2, '0')) as average_speed,
+                ROUND(average_heartrate) as avg_hr
+            FROM activities
+            WHERE athlete_id = %s AND type = 'Run'
+            ORDER BY start_date DESC
+            LIMIT 5
+        """
+        try:
+            recent_activities_df = pd.read_sql_query(recent_activities_query, conn, params=(athlete_id,))
+            recent_activities = recent_activities_df.to_dict(orient='records')
+            
+            # Format dates properly for JSON serialization
+            for activity in recent_activities:
+                if isinstance(activity['date'], pd.Timestamp):
+                    activity['date'] = activity['date'].isoformat()
+                    
+        except Exception as e:
+            print(f"Error fetching recent activities: {str(e)}")
+            recent_activities = []
+        
+        # Calculate a simple training load (based on last 7-day distance compared to previous 7 days)
+        training_load_query = """
+            SELECT 
+                SUM(CASE WHEN start_date BETWEEN DATE_SUB(CURRENT_DATE, INTERVAL 7 DAY) AND CURRENT_DATE
+                    THEN distance ELSE 0 END) as current_week,
+                SUM(CASE WHEN start_date BETWEEN DATE_SUB(CURRENT_DATE, INTERVAL 14 DAY) AND DATE_SUB(CURRENT_DATE, INTERVAL 8 DAY)
+                    THEN distance ELSE 0 END) as previous_week
+            FROM activities
+            WHERE athlete_id = %s AND type = 'Run'
+            AND start_date >= DATE_SUB(CURRENT_DATE, INTERVAL 14 DAY)
+        """
+        training_load_df = pd.read_sql_query(training_load_query, conn, params=(athlete_id,))
+        
+        current_week = training_load_df.iloc[0]['current_week'] if not pd.isna(training_load_df.iloc[0]['current_week']) else 0
+        previous_week = training_load_df.iloc[0]['previous_week'] if not pd.isna(training_load_df.iloc[0]['previous_week']) else 0
+        
+        # Calculate a basic ATL (Acute Training Load) number
+        training_load = int(current_week / 1000) if previous_week == 0 else int((current_week / previous_week) * 100)
+        
+        # Prepare weekly volume data for chart
+        weekly_labels = []
+        weekly_volumes = []
+        
+        for i, row in weekly_df.iterrows():
+            if i == 0:
+                weekly_labels.append('Last Week')
+            else:
+                weekly_labels.append(f'{i+1} Weeks Ago')
+            weekly_volumes.append(round(row['distance_km'], 1))
+        
+        # Reverse the lists to show oldest to newest
+        weekly_labels.reverse()
+        weekly_volumes.reverse()
+        
+        # Return the dashboard data
+        dashboard_data = {
+            'weekly_distance': round(weekly_distance, 1) if weekly_distance is not None else 0,
+            'monthly_distance': round(monthly_distance, 1) if monthly_distance is not None else 0,
+            'average_pace': avg_pace or '0:00',
+            'training_load': training_load or 0,
+            'hr_zones': hr_zones,
+            'weekly_labels': weekly_labels,
+            'weekly_volumes': weekly_volumes,
+            'recent_activities': recent_activities
+        }
+        
+        return jsonify(dashboard_data)
+        
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
+        print(f"Dashboard data error: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'weekly_distance': 0,
+            'monthly_distance': 0,
+            'average_pace': '0:00',
+            'training_load': 0,
+            'hr_zones': [20, 40, 20, 15, 5],
+            'weekly_labels': [],
+            'weekly_volumes': [],
+            'recent_activities': []
+        }), 500
 
 @app.route('/api/activity-details/<activity_id>')
 def activity_details(activity_id):
