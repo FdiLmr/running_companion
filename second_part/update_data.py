@@ -13,7 +13,7 @@ import json
 logger = logging.getLogger(__name__)
 
 DEBUG_MODE = True  # Set to False in production
-ACTIVITIES_LIMIT = 100 if DEBUG_MODE else 90
+ACTIVITIES_LIMIT = 25 if DEBUG_MODE else 90
 
 def refresh_tokens():    
     try:
@@ -291,6 +291,7 @@ def fetch_strava_data():
                                     suffer_score=this_response.get('suffer_score'),
                                     map_data=this_response.get('map'),
                                     laps_data=this_response.get('laps'),
+                                    # Best efforts columns (unchanged)
                                     be_400m=be_columns.get('be_400m'),
                                     be_half_mile=be_columns.get('be_half_mile'),
                                     be_1km=be_columns.get('be_1km'),
@@ -304,8 +305,66 @@ def fetch_strava_data():
                                     be_half_marathon=be_columns.get('be_half_marathon'),
                                     be_30km=be_columns.get('be_30km'),
                                     be_marathon=be_columns.get('be_marathon'),
-                                    be_50km=be_columns.get('be_50km')
-                                )
+                                    be_50km=be_columns.get('be_50km'),
+                                    # New fields
+                                    resource_state=this_response.get('resource_state'),
+                                    sport_type=this_response.get('sport_type'),
+                                    workout_type=this_response.get('workout_type'),
+                                    start_date_local=datetime.strptime(this_response.get('start_date_local'), '%Y-%m-%dT%H:%M:%SZ') if this_response.get('start_date_local') else None,
+                                    timezone=this_response.get('timezone'),
+                                    utc_offset=this_response.get('utc_offset'),
+                                    location_city=this_response.get('location_city'),
+                                    location_state=this_response.get('location_state'),
+                                    location_country=this_response.get('location_country'),
+                                    achievement_count=this_response.get('achievement_count'),
+                                    kudos_count=this_response.get('kudos_count'),
+                                    comment_count=this_response.get('comment_count'),
+                                    athlete_count=this_response.get('athlete_count'),
+                                    photo_count=this_response.get('photo_count'),
+                                    trainer=this_response.get('trainer'),
+                                    commute=this_response.get('commute'),
+                                    manual=this_response.get('manual'),
+                                    private=this_response.get('private'),
+                                    visibility=this_response.get('visibility'),
+                                    flagged=this_response.get('flagged'),
+                                    gear_id=this_response.get('gear_id'),
+                                    start_latlng=this_response.get('start_latlng'),
+                                    end_latlng=this_response.get('end_latlng'),
+                                    average_cadence=this_response.get('average_cadence'),
+                                    average_temp=this_response.get('average_temp'),
+                                    average_watts=this_response.get('average_watts'),
+                                    max_watts=this_response.get('max_watts'),
+                                    weighted_average_watts=this_response.get('weighted_average_watts'),
+                                    device_watts=this_response.get('device_watts'),
+                                    kilojoules=this_response.get('kilojoules'),
+                                    has_heartrate=this_response.get('has_heartrate'),
+                                    heartrate_opt_out=this_response.get('heartrate_opt_out'),
+                                    display_hide_heartrate_option=this_response.get('display_hide_heartrate_option'),
+                                    elev_high=this_response.get('elev_high'),
+                                    elev_low=this_response.get('elev_low'),
+                                    upload_id=this_response.get('upload_id'),
+                                    upload_id_str=this_response.get('upload_id_str'),
+                                    external_id=this_response.get('external_id'),
+                                    from_accepted_tag=this_response.get('from_accepted_tag'),
+                                    pr_count=this_response.get('pr_count'),
+                                    total_photo_count=this_response.get('total_photo_count'),
+                                    has_kudoed=this_response.get('has_kudoed'),
+                                    description=this_response.get('description'),
+                                    calories=this_response.get('calories'),
+                                    perceived_exertion=this_response.get('perceived_exertion'),
+                                    prefer_perceived_exertion=this_response.get('prefer_perceived_exertion'),
+                                    device_name=this_response.get('device_name'),
+                                    embed_token=this_response.get('embed_token'),
+                                    private_note=this_response.get('private_note'),
+                                    similar_activities=this_response.get('similar_activities'),
+                                    available_zones=this_response.get('available_zones'),
+                                    splits_metric=this_response.get('splits_metric'),
+                                    splits_standard=this_response.get('splits_standard'),
+                                    laps=this_response.get('laps'),
+                                    photos=this_response.get('photos'),
+                                    stats_visibility=this_response.get('stats_visibility'),
+                                    hide_from_home=this_response.get('hide_from_home')
+)
                                 db.session.merge(activity)
                             except Exception as e:
                                 logger.error(f"Error storing activity {activity_id}: {e}")
