@@ -67,6 +67,15 @@ def load_latest_athlete_data(athlete_id: int) -> dict:
         
         logger.info(f"Loaded {len(all_activities)} activity files for athlete {athlete_id}.")
 
+        # Filter activities so that we only keep those present in the Activities table.
+        existing_activities_df = read_db('activities')
+        if not existing_activities_df.empty:
+            valid_ids = set(existing_activities_df['id'].tolist())
+            all_activities = [act for act in all_activities if act.get('id') in valid_ids]
+            logger.info(f"After filtering, {len(all_activities)} activities remain (present in the DB).")
+        else:
+            logger.info("No activities found in the DB; returning all loaded activities.")
+
         # Sort activities by start_date (assuming ISO format strings)
         try:
             all_activities.sort(key=lambda x: x.get('start_date', ''), reverse=True)
@@ -98,13 +107,14 @@ def load_latest_athlete_data(athlete_id: int) -> dict:
             **athlete_data,       # Base athlete metadata.
             '_Zones': zones_data, # HR zones data.
             '_Stats': stats_data, # Stats data.
-            '_Activities': all_activities  # List of all activities.
+            '_Activities': all_activities  # List of filtered activities.
         }
         logger.info(f"Successfully loaded latest data for athlete {athlete_id}. Total activities: {len(all_activities)}")
         return final_data
     except Exception as e:
         logger.error(f"Error loading data for athlete {athlete_id}: {e}", exc_info=True)
         return None
+
 
 
 def get_athlete_zones(athlete_data: dict) -> List[int]:
