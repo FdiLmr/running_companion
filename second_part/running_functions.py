@@ -46,75 +46,112 @@ def calculate_vdot(distance: float, time_minutes: float) -> Tuple[float, float]:
 
 def get_pbs(activities: List[dict]) -> List[List]:
     """
-    Get significant personal bests from activities using metadata_pbs,
-    comparing efforts only against the current best for the same distance category.
+    Get a chronological list of significant personal bests (PBs) for target distance categories.
+    
+    For each activity that is a Run or Trail Run with a 'best_efforts' list, we check each effort
+    whose name is in our target categories (5K, 10K, or 15K). If an effort's predicted marathon time
+    (computed via Daniels' formula) is lower than the current best for that category, we record that
+    effort as a new PB (and update the current best) without discarding previous PBs.
     
     Returns:
-        List[List]: Each sublist contains [vdot, predicted marathon time (in hours), pb_date, activity_id].
+        List[List]: Each sublist contains:
+            [vdot, predicted marathon time (in hours), pb_date, activity_id, distance_category].
     """
-    # We'll maintain per-distance-category best values.
-    best_marathon = {}   # Key: distance_category, value: current best predicted marathon time in seconds.
-    best_vdot = {}       # Key: distance_category, value: current best vdot.
-    last_pb = {}         # Key: distance_category, value: last pb date.
-    
-    default_marathon_best = 10 * 60 * 60  # 10 hours in seconds
+    import datetime
     significant_pbs = []
+    # Maintain current best predicted marathon time for each category.
+    current_best = {}  
+    target_categories = {"5K", "10K", "15K"}
+    default_best = 10 * 60 * 60  # 10 hours in seconds
+
+    # Initialize current best for each target category.
+    for cat in target_categories:
+        current_best[cat] = default_best
+
+    logger.info("Starting get_pbs computation to record PB history with detailed logging.")
 
     for activity in activities:
-        if not isinstance(activity, dict) or 'type' not in activity:
+        if not isinstance(activity, dict):
+            logger.debug("Skipping non-dictionary activity.")
             continue
 
-        if activity['type'] not in ['Run', 'Trail Run'] or 'best_efforts' not in activity:
+        activity_type = activity.get('type')
+        if activity_type not in ['Run', 'Trail Run']:
+            logger.debug(f"Skipping activity id {activity.get('id')}: type '{activity_type}' is not Run/Trail Run.")
             continue
 
-        # Skip a known non-useful activity if necessary.
-        if activity['id'] == 9009284547:
+        if 'best_efforts' not in activity:
+            logger.debug(f"Skipping activity id {activity.get('id')}: missing 'best_efforts' field.")
             continue
 
-        # Look for a corresponding PB in the metadata_pbs table (with pr_rank == 1)
-        pb_record = MetadataPB.query.filter_by(activity_id=str(activity['id']), pr_rank=1).first()
-        if pb_record is None:
+        if activity.get('id') == 9009284547:
+            logger.debug("Skipping known non-useful activity with id 9009284547.")
             continue
 
-        # Use the distance_category from the metadata record (e.g., "5K", "10K", etc.)
-        distance_category = pb_record.distance_category
-        distance = int(pb_record.distance)
-        if not (PB_CONSTANTS['MIN_DISTANCE'] <= distance <= PB_CONSTANTS['MAX_DISTANCE']):
-            continue
+        # Parse the activity's start_date to use as pb_date.
+        try:
+            pb_date = datetime.datetime.strptime(activity.get('start_date')[:10], '%Y-%m-%d')
+            logger.debug(f"Parsed pb_date for activity id {activity.get('id')}: {pb_date}.")
+        except Exception as e:
+            logger.error(f"Error parsing start_date for activity id {activity.get('id')}: {e}")
+            pb_date = None
 
-        # Calculate vdot and predicted marathon time using stored elapsed_time and distance
-        vdot, marathon_pred_secs = calculate_vdot(
-            distance=float(pb_record.distance),
-            time_minutes=float(pb_record.elapsed_time) / 60
-        )
+        logger.debug(f"Processing activity id {activity.get('id')} with start_date {activity.get('start_date')}.")
 
-        # Initialize the best values for this distance category if not already present
-        if distance_category not in best_marathon:
-            best_marathon[distance_category] = default_marathon_best
-            best_vdot[distance_category] = 0
-            last_pb[distance_category] = datetime.datetime(1900, 1, 1)
+        for effort in activity.get('best_efforts', []):
+            effort_name = effort.get('name')
+            if effort_name not in target_categories:
+                logger.debug(f"Skipping effort with name '{effort_name}' (not in target categories) in activity id {activity.get('id')}.")
+                continue
 
-        # Compare within the same distance category:
-        if (marathon_pred_secs < best_marathon[distance_category] and 
-            (vdot - best_vdot[distance_category] > PB_CONSTANTS['MIN_VDOT_INCREASE'])):
-            
-            pb_date = pb_record.start_date  # Assumes this is a datetime object
-            if (pb_date - last_pb[distance_category]).days > PB_CONSTANTS['MIN_DAYS_BETWEEN_PB']:
-                # Update the best values for this category
-                best_marathon[distance_category] = marathon_pred_secs
-                best_vdot[distance_category] = vdot
-                last_pb[distance_category] = pb_date
-                logger.info(f"New PB found for {distance_category}: Predicted Marathon time: {marathon_pred_secs/3600:.2f}h, VDOT: {vdot:.1f}, Date: {pb_date}")
-                
+            try:
+                elapsed = float(effort.get('elapsed_time'))
+                distance = float(effort.get('distance', 0))
+                logger.debug(f"Effort '{effort_name}' in activity id {activity.get('id')}: elapsed_time={elapsed}, distance={distance}.")
+            except Exception as e:
+                logger.error(f"Error parsing elapsed_time or distance for effort '{effort_name}' in activity id {activity.get('id')}: {e}")
+                continue
+
+            if not (PB_CONSTANTS['MIN_DISTANCE'] <= distance <= PB_CONSTANTS['MAX_DISTANCE']):
+                logger.debug(f"Effort '{effort_name}' in activity id {activity.get('id')} has distance {distance} outside valid range.")
+                continue
+
+            try:
+                vdot, marathon_pred_secs = calculate_vdot(
+                    distance=distance,
+                    time_minutes=elapsed / 60
+                )
+                logger.debug(f"Calculated for effort '{effort_name}' in activity id {activity.get('id')}: vdot={vdot:.2f}, predicted marathon time={marathon_pred_secs:.2f} sec.")
+            except Exception as e:
+                logger.error(f"Error calculating vdot for effort '{effort_name}' in activity id {activity.get('id')}: {e}")
+                continue
+
+            # If the effort beats the current best, record it as a new PB.
+            if marathon_pred_secs < current_best[effort_name]:
+                logger.info(
+                    f"New PB for {effort_name} found in activity id {activity.get('id')}: "
+                    f"predicted marathon time {marathon_pred_secs/3600:.2f}h (previous best: "
+                    f"{current_best[effort_name]/3600:.2f}h), vdot {vdot:.2f}."
+                )
                 significant_pbs.append([
                     vdot,
-                    marathon_pred_secs / 3600,
+                    marathon_pred_secs / 3600,  # Convert seconds to hours.
                     pb_date,
-                    pb_record.activity_id, 
-                    distance_category
+                    activity.get('id'),
+                    effort_name
                 ])
+                # Update current best so that later efforts must be even better.
+                current_best[effort_name] = marathon_pred_secs
+            else:
+                logger.debug(
+                    f"Effort '{effort_name}' in activity id {activity.get('id')} did not beat current best "
+                    f"(current best: {current_best[effort_name]/3600:.2f}h, computed: {marathon_pred_secs/3600:.2f}h)."
+                )
 
+    logger.info("Completed get_pbs computation; returning PB history.")
     return significant_pbs
+
+
 
 def get_run_outliers(all_activities: pd.DataFrame, block_id: int, athlete_id: str) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Identify distance, intensity, and interval outliers in running activities."""
