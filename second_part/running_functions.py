@@ -8,6 +8,7 @@ from sklearn.linear_model import LinearRegression
 import logging
 from activity_functions import get_non_run_activity_data, get_run_activity_data, get_run_hr_pace
 from models import MetadataPB
+from sklearn.metrics import mean_squared_error, r2_score  # Import necessary metrics
 
 logger = logging.getLogger(__name__)
 
@@ -77,43 +78,43 @@ def get_pbs(activities: List[dict]) -> List[List]:
 
         activity_type = activity.get('type')
         if activity_type not in ['Run', 'Trail Run']:
-            logger.debug(f"Skipping activity id {activity.get('id')}: type '{activity_type}' is not Run/Trail Run.")
+            #logger.debug(f"Skipping activity id {activity.get('id')}: type '{activity_type}' is not Run/Trail Run.")
             continue
 
         if 'best_efforts' not in activity:
-            logger.debug(f"Skipping activity id {activity.get('id')}: missing 'best_efforts' field.")
+            #logger.debug(f"Skipping activity id {activity.get('id')}: missing 'best_efforts' field.")
             continue
 
         if activity.get('id') == 9009284547:
-            logger.debug("Skipping known non-useful activity with id 9009284547.")
+            #logger.debug("Skipping known non-useful activity with id 9009284547.")
             continue
 
         # Parse the activity's start_date to use as pb_date.
         try:
             pb_date = datetime.datetime.strptime(activity.get('start_date')[:10], '%Y-%m-%d')
-            logger.debug(f"Parsed pb_date for activity id {activity.get('id')}: {pb_date}.")
+            #logger.debug(f"Parsed pb_date for activity id {activity.get('id')}: {pb_date}.")
         except Exception as e:
-            logger.error(f"Error parsing start_date for activity id {activity.get('id')}: {e}")
+            #logger.error(f"Error parsing start_date for activity id {activity.get('id')}: {e}")
             pb_date = None
 
-        logger.debug(f"Processing activity id {activity.get('id')} with start_date {activity.get('start_date')}.")
+        #logger.debug(f"Processing activity id {activity.get('id')} with start_date {activity.get('start_date')}.")
 
         for effort in activity.get('best_efforts', []):
             effort_name = effort.get('name')
             if effort_name not in target_categories:
-                logger.debug(f"Skipping effort with name '{effort_name}' (not in target categories) in activity id {activity.get('id')}.")
+                #logger.debug(f"Skipping effort with name '{effort_name}' (not in target categories) in activity id {activity.get('id')}.")
                 continue
 
             try:
                 elapsed = float(effort.get('elapsed_time'))
                 distance = float(effort.get('distance', 0))
-                logger.debug(f"Effort '{effort_name}' in activity id {activity.get('id')}: elapsed_time={elapsed}, distance={distance}.")
+                #logger.debug(f"Effort '{effort_name}' in activity id {activity.get('id')}: elapsed_time={elapsed}, distance={distance}.")
             except Exception as e:
-                logger.error(f"Error parsing elapsed_time or distance for effort '{effort_name}' in activity id {activity.get('id')}: {e}")
+                #logger.error(f"Error parsing elapsed_time or distance for effort '{effort_name}' in activity id {activity.get('id')}: {e}")
                 continue
 
             if not (PB_CONSTANTS['MIN_DISTANCE'] <= distance <= PB_CONSTANTS['MAX_DISTANCE']):
-                logger.debug(f"Effort '{effort_name}' in activity id {activity.get('id')} has distance {distance} outside valid range.")
+                #logger.debug(f"Effort '{effort_name}' in activity id {activity.get('id')} has distance {distance} outside valid range.")
                 continue
 
             try:
@@ -121,9 +122,9 @@ def get_pbs(activities: List[dict]) -> List[List]:
                     distance=distance,
                     time_minutes=elapsed / 60
                 )
-                logger.debug(f"Calculated for effort '{effort_name}' in activity id {activity.get('id')}: vdot={vdot:.2f}, predicted marathon time={marathon_pred_secs:.2f} sec.")
+                #logger.debug(f"Calculated for effort '{effort_name}' in activity id {activity.get('id')}: vdot={vdot:.2f}, predicted marathon time={marathon_pred_secs:.2f} sec.")
             except Exception as e:
-                logger.error(f"Error calculating vdot for effort '{effort_name}' in activity id {activity.get('id')}: {e}")
+                #logger.error(f"Error calculating vdot for effort '{effort_name}' in activity id {activity.get('id')}: {e}")
                 continue
 
             # If the effort beats the current best, record it as a new PB.
@@ -142,11 +143,11 @@ def get_pbs(activities: List[dict]) -> List[List]:
                 ])
                 # Update current best so that later efforts must be even better.
                 current_best[effort_name] = marathon_pred_secs
-            else:
-                logger.debug(
-                    f"Effort '{effort_name}' in activity id {activity.get('id')} did not beat current best "
-                    f"(current best: {current_best[effort_name]/3600:.2f}h, computed: {marathon_pred_secs/3600:.2f}h)."
-                )
+            #else:
+                #logger.debug(
+                #    f"Effort '{effort_name}' in activity id {activity.get('id')} did not beat current best "
+                #    f"(current best: {current_best[effort_name]/3600:.2f}h, computed: {marathon_pred_secs/3600:.2f}h)."
+                #)
 
     logger.info("Completed get_pbs computation; returning PB history.")
     return significant_pbs
@@ -415,6 +416,18 @@ def build_pace_to_hr_regressor(activities: List[dict], athlete_id: str, zones: L
         
         regressor = LinearRegression()
         regressor.fit(X, y)
+
+        # Log the coefficients and intercept of the regression model
+        logger.info(f"Regressor coefficients: {regressor.coef_}, Intercept: {regressor.intercept_}")
+
+        # Calculate predictions and metrics
+        predictions = regressor.predict(X)
+        mse = mean_squared_error(y, predictions)
+        rmse = mse ** 0.5
+        r2 = r2_score(y, predictions)
+
+        # Log the metrics
+        logger.info(f"R²: {r2:.4f}, MSE: {mse:.4f}, RMSE: {rmse:.4f}")
         
         return regressor, valid_data
     except Exception as e:
