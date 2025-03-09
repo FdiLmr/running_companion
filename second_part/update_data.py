@@ -13,7 +13,7 @@ import json
 logger = logging.getLogger(__name__)
 
 DEBUG_MODE = True  # Set to False in production
-ACTIVITIES_LIMIT = 100 if DEBUG_MODE else 90
+ACTIVITIES_LIMIT = 20 if DEBUG_MODE else 90
 
 def refresh_tokens():    
     try:
@@ -50,6 +50,16 @@ def get_unprocessed_activities(activity_list, existing_ids, limit=ACTIVITIES_LIM
         if activity['id'] not in existing_ids:
             new_activities.append(activity)
     return new_activities
+
+def fetch_activity_streams(activity_id, headers):
+    """Fetch streams for a given activity."""
+    stream_types = ["time", "distance", "latlng", "altitude", "velocity_smooth",
+                    "heartrate", "cadence", "watts", "temp", "moving", "grade_smooth"]
+    streams_url = f'https://www.strava.com/api/v3/activities/{activity_id}/streams'
+    params = {'keys': ','.join(stream_types), 'key_by_type': 'true'}
+    response = requests.get(streams_url, headers=headers, params=params)
+    response.raise_for_status()
+    return response.json()
 
 def save_activity_data(athlete_id: int, activities: list, timestamp: str = None) -> None:
     """Save activities to a JSON file with timestamp."""
@@ -238,6 +248,31 @@ def fetch_strava_data():
                                     json.dump(this_response, f, indent=2)
                                 current_api_calls += 1  # Only count an API call if we had to fetch it
                                 logger.info(f"Fetching activity {activity_id} from Strava")
+                            
+                            # FETCH ACTIVITY STREAMS
+                            try:
+                                # Check if streams file already exists
+                                streams_file_path = os.path.join(athlete_dir, f'{activity_id}_streams.json')
+                                
+                                if os.path.exists(streams_file_path):
+                                    logger.info(f"Activity streams for {activity_id} already cached")
+                                else:
+                                    logger.info(f"Fetching activity streams for {activity_id}")
+                                    # Fetch the streams using the existing function
+                                    streams_data = fetch_activity_streams(activity_id, headers)
+                                    
+                                    # Save the streams data to file
+                                    with open(streams_file_path, 'w', encoding='utf-8') as f:
+                                        json.dump(streams_data, f, indent=2)
+                                    
+                                    # Count API call
+                                    current_api_calls += 1
+                                    logger.info(f"Successfully fetched and saved streams for activity {activity_id}")
+                                    
+                                    # Rate limiting for streams API call
+                                    time.sleep(1.0)
+                            except Exception as e:
+                                logger.error(f"Error fetching streams for activity {activity_id}: {e}")
                             
                             activities.append(this_response)
                             new_activities_count += 1
