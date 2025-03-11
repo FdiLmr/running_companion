@@ -273,6 +273,24 @@ class MetadataPB(db.Model):
     activity_id = db.Column(db.String(100))    # the activity ID associated with this PB
     pb_data = db.Column(db.JSON)  # (Optional) store the full best effort JSON
 
+    # Add a unique constraint for athlete_id and distance_category
+    __table_args__ = (
+        db.UniqueConstraint('athlete_id', 'distance_category', name='uix_athlete_id_distance_category'),
+    )
+
     def __repr__(self):
         return (f'<MetadataPB {self.athlete_id} {self.distance_category} PB: '
                 f'{self.elapsed_time}s, rank {self.pr_rank}>')
+
+class RacePrediction(db.Model):
+    __tablename__ = 'race_predictions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    athlete_id = db.Column(db.String(100), nullable=False)
+    riegel_exponent = db.Column(db.Float, nullable=False)  # Calculated personalized exponent
+    best_distance = db.Column(db.Float, nullable=False)    # Base distance in meters
+    best_time = db.Column(db.Integer, nullable=False)      # Base time in seconds
+    created_at = db.Column(db.DateTime, nullable=False)    # When prediction was calculated
+    
+    def __repr__(self):
+        return f'<RacePrediction {self.id} for athlete {self.athlete_id}>'
