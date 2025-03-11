@@ -1,4 +1,4 @@
-from flask import Flask, session, request, render_template, redirect, send_file, jsonify, abort
+from flask import Flask, session, request, render_template, redirect, send_file, jsonify, abort, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from environs import Env
@@ -27,6 +27,7 @@ import random
 import json
 from train_model import train_model
 import pandas as pd
+from race_prediction import calculate_athlete_predictions, get_latest_prediction, format_time
 
 # Configure logging first
 logging.basicConfig(level=logging.DEBUG)
@@ -84,6 +85,33 @@ def create_required_tables():
                 """))
                 conn.execute(text("INSERT INTO daily_limit (daily) VALUES (0)"))
                 conn.commit()
+        
+        # Make sure the metadata_pbs table exists
+        if 'metadata_pbs' not in existing_tables:
+            logger.info("Creating metadata_pbs table")
+            db.create_all()  # This should create the table since MetadataPB is defined in models.py
+        else:
+            # Check if the uniqueness constraint exists
+            with db.engine.connect() as conn:
+                constraint_query = text("""
+                    SELECT COUNT(*) FROM information_schema.table_constraints 
+                    WHERE table_name = 'metadata_pbs' 
+                    AND constraint_name = 'uix_athlete_id_distance_category'
+                """)
+                has_constraint = conn.execute(constraint_query).scalar() > 0
+                
+                if not has_constraint:
+                    logger.info("Recreating metadata_pbs table with uniqueness constraint")
+                    # Drop and recreate the table with the new constraint
+                    conn.execute(text("DROP TABLE metadata_pbs"))
+                    conn.commit()
+                    db.create_all()  # Recreate with new constraint
+                    logger.info("metadata_pbs table recreated successfully")
+        
+        # Make sure the race_predictions table exists
+        if 'race_predictions' not in existing_tables:
+            logger.info("Creating race_predictions table")
+            db.create_all()  # This should create the table since RacePrediction is defined in models.py
         
         # Log created tables
         updated_tables = inspect(db.engine).get_table_names()
@@ -263,8 +291,107 @@ def reset_processing():
 def view_athletes():
     try:
         metadata_athletes = read_db('metadata_athletes')
-        return render_template('view_athletes.html', athletes=metadata_athletes)
+        
+        # Create a new processed DataFrame for display
+        display_data = []
+        
+        for _, athlete in metadata_athletes.iterrows():
+            # Format weight properly - handle both string and float cases
+            weight_value = athlete['weight']
+            if weight_value and not pd.isna(weight_value):
+                try:
+                    # Try to convert to float first (in case it's stored as string)
+                    weight_float = float(weight_value)
+                    weight_display = f"{weight_float:.1f} kg"
+                except (ValueError, TypeError):
+                    # If conversion fails, just use the string as is
+                    weight_display = f"{weight_value} kg"
+            else:
+                weight_display = "N/A"
+                
+            athlete_data = {
+                'id': athlete['id'],
+                'sex': athlete['sex'],
+                'weight': weight_display
+            }
+            
+            # Parse the zones data
+            try:
+                if athlete['zones'] and not pd.isna(athlete['zones']):
+                    zones_str = str(athlete['zones'])
+                    
+                    # Check if the zones are in dictionary format with min/max values
+                    if "'min'" in zones_str and "'max'" in zones_str:
+                        # Try to parse the zones as a list of dicts with min/max values
+                        import ast
+                        try:
+                            # Use ast.literal_eval to safely evaluate the string as a Python literal
+                            zones_list = ast.literal_eval(zones_str)
+                            
+                            # Extract the threshold values (max values except the last one)
+                            thresholds = []
+                            for zone in zones_list:
+                                if isinstance(zone, dict) and 'max' in zone and zone['max'] != -1:
+                                    thresholds.append(zone['max'])
+                                    
+                            # Store the thresholds for the template
+                            athlete_data['raw_zones'] = thresholds
+                            
+                            # Generate a readable description
+                            if len(thresholds) >= 4:
+                                # Get the min values too
+                                mins = [zone.get('min', 0) for zone in zones_list if isinstance(zone, dict)]
+                                if len(mins) >= 5:
+                                    athlete_data['zones'] = (
+                                        f"Z1: {mins[0]}-{thresholds[0]}, "
+                                        f"Z2: {mins[1]}-{thresholds[1]}, "
+                                        f"Z3: {mins[2]}-{thresholds[2]}, "
+                                        f"Z4: {mins[3]}-{thresholds[3]}, "
+                                        f"Z5: {mins[4]}+"
+                                    )
+                                else:
+                                    athlete_data['zones'] = zones_str
+                            else:
+                                athlete_data['zones'] = zones_str
+                        except (ValueError, SyntaxError):
+                            # If parsing fails, use the original string
+                            athlete_data['zones'] = zones_str
+                            athlete_data['raw_zones'] = []
+                    else:
+                        # The old parsing approach for simple threshold lists
+                        try:
+                            zones_str_values = str(athlete['zones']).strip('[]').split(',')
+                            zones = []
+                            for z in zones_str_values:
+                                try:
+                                    if z.strip():
+                                        zones.append(int(float(z.strip())))
+                                except (ValueError, TypeError):
+                                    pass
+                            
+                            athlete_data['raw_zones'] = zones
+                            
+                            if len(zones) >= 4:
+                                athlete_data['zones'] = f"Z1: <{zones[0]}, Z2: {zones[0]}-{zones[1]}, Z3: {zones[1]}-{zones[2]}, Z4: {zones[2]}-{zones[3]}, Z5: >{zones[3]}"
+                            else:
+                                athlete_data['zones'] = str(athlete['zones'])
+                        except Exception as e:
+                            logger.error(f"Error parsing simple zones: {e}")
+                            athlete_data['zones'] = zones_str
+                            athlete_data['raw_zones'] = []
+                else:
+                    athlete_data['zones'] = "No zones data"
+                    athlete_data['raw_zones'] = []
+            except Exception as e:
+                logger.error(f"Error parsing zones for athlete {athlete['id']}: {e}")
+                athlete_data['zones'] = "Error parsing zones"
+                athlete_data['raw_zones'] = []
+            
+            display_data.append(athlete_data)
+        
+        return render_template('view_athletes.html', athletes=pd.DataFrame(display_data))
     except Exception as e:
+        logger.error(f"Error retrieving athlete data: {e}")
         return f"Error retrieving athlete data: {str(e)}"
 
 @app.route('/view_activities/<athlete_id>')
@@ -307,10 +434,92 @@ def view_stats(athlete_id):
     try:
         stats = db.session.get(AthleteStats, athlete_id)
         if stats:
-            return render_template('stats.html', stats=stats)
+            # Format the stats data for display
+            formatted_stats = {
+                'athlete_id': stats.athlete_id,
+                'recent_run_totals': format_stats_data(stats.recent_run_totals),
+                'all_run_totals': format_stats_data(stats.all_run_totals),
+                'all_ride_totals': format_stats_data(stats.all_ride_totals)
+            }
+            return render_template('stats.html', stats=formatted_stats)
         return "No stats found for this athlete"
     except Exception as e:
         return f"Error retrieving stats: {str(e)}"
+
+def format_stats_data(stats_dict):
+    """Format stats data for display with proper units and formatting."""
+    if not stats_dict:
+        return {}
+        
+    formatted = {}
+    
+    for key, value in stats_dict.items():
+        if key == 'count':
+            # Keep count as is
+            formatted[key] = f"{value} activities"
+        elif 'distance' in key:
+            # Convert distance from meters to kilometers
+            if value is not None:
+                formatted[key] = f"{value/1000:.2f} km"
+            else:
+                formatted[key] = "0.00 km"
+        elif 'time' in key or 'moving_time' in key or 'elapsed_time' in key:
+            # Format time values as HH:MM:SS
+            if value is not None:
+                hours = value // 3600
+                minutes = (value % 3600) // 60
+                seconds = value % 60
+                if hours > 0:
+                    formatted[key] = f"{hours}:{minutes:02d}:{seconds:02d}"
+                else:
+                    formatted[key] = f"{minutes}:{seconds:02d}"
+            else:
+                formatted[key] = "00:00"
+        elif 'elevation' in key:
+            # Format elevation in meters
+            if value is not None:
+                formatted[key] = f"{value:.0f} m"
+            else:
+                formatted[key] = "0 m"
+        elif 'speed' in key:
+            # Convert speed to km/h
+            if value is not None:
+                formatted[key] = f"{value * 3.6:.1f} km/h"
+            else:
+                formatted[key] = "0.0 km/h"
+        elif 'pace' in key:
+            # Format pace as min/km
+            if value is not None and value > 0:
+                # Convert m/s to min/km
+                pace_min_per_km = 1000 / (value * 60)
+                minutes = int(pace_min_per_km)
+                seconds = int((pace_min_per_km - minutes) * 60)
+                formatted[key] = f"{minutes}:{seconds:02d} min/km"
+            else:
+                formatted[key] = "0:00 min/km"
+        elif 'heartrate' in key or 'hr' in key:
+            # Format heart rate values
+            if value is not None:
+                formatted[key] = f"{value:.0f} bpm"
+            else:
+                formatted[key] = "N/A"
+        elif 'calories' in key:
+            # Format calorie values
+            if value is not None:
+                formatted[key] = f"{value:.0f} kcal"
+            else:
+                formatted[key] = "0 kcal"
+        elif 'achievement_count' in key or 'pr_count' in key:
+            # Format achievement counts
+            if value is not None:
+                formatted[key] = f"{value} achievements"
+            else:
+                formatted[key] = "0 achievements"
+        else:
+            # Keep other values as is
+            formatted[key] = value
+            
+    return formatted
 
 @app.route('/reset_activities')
 def reset_activities():
@@ -443,22 +652,21 @@ def getattr_filter(obj, name):
 
 @app.template_filter('format_time')
 def format_time_filter(seconds):
-    """
-    Converts a total number of seconds into either mm:ss (if < 1 hour)
-    or hh:mm:ss (if >= 1 hour).
-    """
-    if not seconds:
-        return "00:00"
-    
-    seconds = int(seconds)
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    secs = seconds % 60
-    
-    if hours > 0:
-        return f"{hours:01d}:{minutes:02d}:{secs:02d}"  # e.g. 1:07:05
-    else:
-        return f"{minutes:01d}:{secs:02d}"  # e.g. 7:05
+    # Original filter functionality (if there's any existing functionality, preserve it)
+    try:
+        seconds = float(seconds)
+    except (ValueError, TypeError):
+        return str(seconds)
+        
+    # Delegate to the format_time function from race_prediction.py for consistency
+    from race_prediction import format_time
+    return format_time(seconds)
+
+# Register format_time as a global function for templates to use directly
+@app.context_processor
+def utility_processor():
+    from race_prediction import format_time
+    return dict(format_time=format_time)
 
 @app.route('/view_best_efforts/<athlete_id>')
 def view_best_efforts(athlete_id):
@@ -799,8 +1007,80 @@ def activity_detail(activity_id):
     record = dict(result._mapping)
     return render_template('activity_detail.html', activity=record, athlete_id=athlete_id)
 
+@app.route('/race_predictions/<athlete_id>')
+def race_predictions(athlete_id):
+    """Display the race predictions page for an athlete"""
+    # Check if predictions exist, if not calculate them
+    prediction_data = get_latest_prediction(athlete_id)
+    
+    if not prediction_data:
+        prediction_data = calculate_athlete_predictions(athlete_id)
+        
+    # If still no prediction data, athlete might not have required PBs
+    if not prediction_data:
+        flash("Unable to generate predictions. Athlete needs both 5K and 10K personal bests.", "warning")
+        return redirect(f"/dashboard/{athlete_id}")
+        
+    return render_template(
+        'race_predictions.html', 
+        athlete_id=athlete_id, 
+        prediction_data=prediction_data
+    )
 
+@app.route('/api/race-prediction-data/<athlete_id>')
+def race_prediction_data(athlete_id):
+    """API endpoint to get prediction data for the dashboard widget"""
+    prediction_data = get_latest_prediction(athlete_id)
+    
+    if not prediction_data:
+        prediction_data = calculate_athlete_predictions(athlete_id)
+        
+    if not prediction_data:
+        return jsonify({"error": "Insufficient data for predictions"})
+        
+    # Return a simplified version for the dashboard widget
+    key_races = ['5km', '10km', 'Half Marathon', 'Marathon']
+    simplified_data = {
+        "exponent": prediction_data["exponent"],
+        "created_at": prediction_data.get("created_at", ""),
+        "key_predictions": {
+            race: {
+                "realistic": format_time(prediction_data["predictions"][race]["realistic"])
+            } for race in key_races if race in prediction_data["predictions"]
+        }
+    }
+    
+    return jsonify(simplified_data)
 
+@app.route('/api/full-race-predictions/<athlete_id>')
+def full_race_predictions(athlete_id):
+    """API endpoint to get full prediction data with all race distances and times"""
+    prediction_data = get_latest_prediction(athlete_id)
+    
+    if not prediction_data:
+        prediction_data = calculate_athlete_predictions(athlete_id)
+        
+    if not prediction_data:
+        return jsonify({"error": "Insufficient data for predictions"})
+    
+    # Process predictions to include formatted times
+    formatted_predictions = {}
+    for race, predictions in prediction_data["predictions"].items():
+        formatted_predictions[race] = {
+            "optimistic": format_time(predictions["optimistic"]),
+            "realistic": format_time(predictions["realistic"]),
+            "conservative": format_time(predictions["conservative"])
+        }
+    
+    # Return full prediction data with formatted times
+    result = {
+        "exponent": prediction_data["exponent"],
+        "base_performance": prediction_data["base_performance"],
+        "predictions": formatted_predictions,
+        "created_at": prediction_data.get("created_at", "")
+    }
+    
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True)
